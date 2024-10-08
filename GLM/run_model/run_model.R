@@ -74,6 +74,7 @@ params <- c(
   "sigma_alpha1_species",
   "mu_alpha2",
   "sigma_alpha2_species",
+  "scale_param",
   #"alpha0_species",
   #"alpha1_species",
   #"alpha2_species",
@@ -84,9 +85,9 @@ params <- c(
 
 
 # MCMC settings
-n_iterations <- 400
+n_iterations <- 800
 n_thin <- 1
-n_burnin <- 200
+n_burnin <- 400
 n_chains <- 4
 n_cores <- 4
 
@@ -104,7 +105,8 @@ inits <- lapply(1:n_chains, function(i)
 )
 
 # Call STAN model from R 
-stan_model <- "./GLM/models/GLM1_poisson.stan"
+#stan_model <- "./GLM/models/GLM1_poisson.stan"
+stan_model <- "./GLM/models/GLM2_negbin.stan"
 
 ## Call Stan from R
 library(rstan)
@@ -176,8 +178,8 @@ par(mfrow = c(1, 1))
 plot(list_of_draws$fit, list_of_draws$fit_new, main = "", xlab =
        "Discrepancy actual data", ylab = "Discrepancy replicate data",
      frame.plot = FALSE,
-     ylim = c(0, 4500),
-     xlim = c(0, 4500))
+     ylim = c(000, 50000),
+     xlim = c(000, 50000))
 abline(0, 1, lwd = 2, col = "black")
 
 mean(list_of_draws$fit_new > list_of_draws$fit)

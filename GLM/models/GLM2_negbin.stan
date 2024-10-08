@@ -31,7 +31,8 @@ parameters {
   real mu_alpha2; // community mean effect of year
   vector[n_species] alpha2_species_raw; // vector of species specific year effects
   real<lower=0> sigma_alpha2_species; // among species variation in year effects
-
+  
+  real<lower=0> scale_param;
 }
 
 transformed parameters {
@@ -75,11 +76,14 @@ model {
   alpha2_species_raw ~ std_normal();
   sigma_alpha2_species ~ normal(0, 2);
   
+  // neg bin scale param
+  scale_param ~ normal(0,1);
+  
   // Likelihood
   for (i in 1:R) { // for each siteXspecies
     // (from max observed to K) 
     // lp of abundance given ecological model and observational model
-    target += poisson_log_lpmf(y[i] | log_mu[i]);
+    target += neg_binomial_2_log_lpmf(y[i] | log_mu[i], scale_param);
   }
   
 }
@@ -102,7 +106,7 @@ generated quantities {
  
   // predict abundance given log_mu
   for (i in 1:R) {
-    N[i] = poisson_log_rng(log_mu[i]);
+    N[i] = neg_binomial_2_log_rng(log_mu[i], scale_param);
   }
   
   // Bayesian p-value fit. 
@@ -121,7 +125,7 @@ generated quantities {
   for (i in 1:R) {
       // Assess model fit using Chi-squared discrepancy
       // Compute fit statistic E for observed data
-      eval[i] = poisson_log_rng(log_mu[i]); // expected value at observation i for visit j 
+      eval[i] = neg_binomial_2_log_rng(log_mu[i], scale_param); // expected value at observation i for visit j 
         // (probabilty across visits is fixed) is = expected detection prob * expected abundance
       // Compute fit statistic E_new for real data (y)
       E[i] = square(y[i] - eval[i]) / (eval[i] + 0.5);
@@ -134,7 +138,7 @@ generated quantities {
     fit_new = fit_new + E_new[i]; // descrepancies for generated data for each 
                                       // siteXspecies combos 
   }
-  
+
   for (i in 1:n_species){
     vector[(n_sites*2)] totalSpecies; // *2 because there are 2 years
     for (j in 1:(n_sites*2)){ // *2 because there are 2 years
