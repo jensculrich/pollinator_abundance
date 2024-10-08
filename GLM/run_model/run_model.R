@@ -62,8 +62,8 @@ stan_data <- c("R",
                "sites",
                "n_sites",
                "species",
-               "years",
                "n_species", 
+               "years",
                "y", "X")
 
 # Parameters monitored
@@ -75,9 +75,9 @@ params <- c(
   "mu_alpha2",
   "sigma_alpha2_species",
   "scale_param",
-  #"alpha0_species",
-  #"alpha1_species",
-  #"alpha2_species",
+  "alpha0_species",
+  "alpha1_species",
+  "alpha2_species",
   "fit",
   "fit_new",
   "totalN"
