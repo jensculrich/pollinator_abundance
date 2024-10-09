@@ -1,4 +1,4 @@
-# fit the GLM model to my real data
+# fit the Nmix model to my real data
 library(tidyverse)
 
 ################################################################################
@@ -54,6 +54,9 @@ names <- rbind("Agapostemon texanus",
                "Melissodes microsticus")
 
 species_names_table <- as.data.frame(cbind(cbind(1:7), names))
+site_names_unique <- unique(site_names)
+factor_sites <- as.integer(as.factor(site_names_unique))
+site_names_table <- as.data.frame(factor_sites, site_names_unique)
 
 ##########################
 ### Run model ############
@@ -76,6 +79,7 @@ params <- c(
   "sigma_alpha1_species",
   "mu_alpha2",
   "sigma_alpha2_species",
+  "sigma_alpha3_site",
   "mu_beta0",
   "sigma_beta0_species",
   "mu_beta1",
@@ -85,6 +89,7 @@ params <- c(
   "alpha0_species",
   "alpha1_species",
   "alpha2_species",
+  "alpha3_site",
   "beta0_species",
   "beta1_species",
   "fit",
@@ -119,7 +124,7 @@ inits <- lapply(1:n_chains, function(i)
 )
 
 # Call STAN model from R 
-stan_model <- "./N_mixture/models/Nmix1_negbin.stan"
+stan_model <- "./N_mixture/models/Nmix2_negbin_w_site_re.stan"
 
 ## Call Stan from R
 library(rstan)

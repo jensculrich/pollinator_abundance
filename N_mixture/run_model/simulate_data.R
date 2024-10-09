@@ -1,4 +1,5 @@
 ## simulate data for abundance from a Poisson or Negative Binomial distribution
+## with detection error, to fit with a Nmix model
 
 ##########################
 ### Simulate data ########

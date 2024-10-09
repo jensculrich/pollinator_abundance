@@ -1,6 +1,9 @@
 # fit the GLM model to my real data
 library(tidyverse)
 
+# one way to do this for repeat counts would be to take the max count per site*species*year
+# another way could be to use site random effects and treat the data as repeat draws
+
 ################################################################################
 # load and format data
 
