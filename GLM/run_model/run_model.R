@@ -4,6 +4,10 @@ library(tidyverse)
 # one way to do this for repeat counts would be to take the max count per site*species*year
 # another way could be to use site random effects and treat the data as repeat draws
 
+# run model with max counts? TRUE
+# or treat as repeated counts? FALSE
+use_max_counts = FALSE
+
 ################################################################################
 # load and format data
 
@@ -13,6 +17,9 @@ library(tidyverse)
 
 df <- read.csv("./data/abundance_data.csv")
 str(df)
+
+# for now we will filter out the species that we only looked at in one year (A. prunorum)
+df <- filter(df, species != "Andrena prunorum")
 
 ## Clean and prep data for model fitting
 # select needed columns
@@ -27,22 +34,16 @@ df <- df %>%
   group_by(site, species, year) %>%
   mutate(visit = row_number())
 
-# for now we will filter out the species that we only looked at in one year (A. prunorum)
-df <- filter(df, species != "Andrena prunorum")
-
 # long  to wide
-#df <- pivot_wider(df, names_from = visit, values_from = count)
+df <- pivot_wider(df, names_from = visit, values_from = count)
 
 species_names <- as.vector(df$species) # vector of species
 site_names <- as.vector(df$site) # vector of sites
 
-#y <- as.matrix(df[,5:7]) # count columns
-#K <- as.integer(max(y)*2.5) # need to define a maximum population size K
-#T <- ncol(y)
-
-y <- as.vector(df$count)
+y <- as.matrix(df[,5:7]) # count columns
+n_visits <- ncol(y)
+R <- nrow(y)
 X <- as.vector(df$treatment)
-R <- length(y)
 species <- as.integer(as.factor(species_names))
 sites <- as.integer(as.factor(site_names))
 years <- as.vector(df$year)
@@ -57,6 +58,15 @@ names <- rbind("Agapostemon texanus",
 
 species_names_table <- as.data.frame(cbind(cbind(1:7), names))
 
+if(use_max_counts == TRUE){
+  y_matrix <- y
+  y <- apply(y, 1, max)
+  
+  R <- length(y)
+}
+
+
+
 ##########################
 ### Run model ############
 ##########################
@@ -67,6 +77,7 @@ stan_data <- c("R",
                "species",
                "n_species", 
                "years",
+               "n_visits",
                "y", "X")
 
 # Parameters monitored
@@ -77,10 +88,12 @@ params <- c(
   "sigma_alpha1_species",
   "mu_alpha2",
   "sigma_alpha2_species",
+  "sigma_alpha3_site",
   "scale_param",
   "alpha0_species",
   "alpha1_species",
   "alpha2_species",
+  "alpha3_site",
   "fit",
   "fit_new",
   "totalN"
@@ -103,13 +116,21 @@ inits <- lapply(1:n_chains, function(i)
        mu_alpha1 = runif(1, -1, 1),
        sigma_alpha1_species = runif(1, 0, 1),
        mu_alpha2 = runif(1, -1, 1),
-       sigma_alpha2_species = runif(1, 0, 1)
+       sigma_alpha2_species = runif(1, 0, 1),
+       sigma_alpha3_site = runif(1, 0, 1)
   )
 )
 
 # Call STAN model from R 
 #stan_model <- "./GLM/models/GLM1_poisson.stan"
-stan_model <- "./GLM/models/GLM2_negbin.stan"
+#stan_model <- "./GLM/models/GLM2_negbin.stan"
+
+if(use_max_counts == TRUE){
+  stan_model <- "./GLM/models/GLM4_negbin_w_site_re_max_counts.stan"
+} else {
+  stan_model <- "./GLM/models/GLM3_negbin_w_site_re.stan"
+}
+
 
 ## Call Stan from R
 library(rstan)
@@ -127,7 +148,8 @@ print(stan_out, digits = 3)
 
 traceplot(stan_out, pars = c("mu_alpha0", "sigma_alpha0_species",
                                  "mu_alpha1", "sigma_alpha1_species", 
-                                 "mu_alpha2", "sigma_alpha2_species"))
+                                 "mu_alpha2", "sigma_alpha2_species",
+                             "sigma_alpha3_site"))
 
 
 library(bayesplot)

@@ -1,5 +1,4 @@
 ## simulate data for abundance from a Poisson or Negative Binomial distribution
-## with detection error, to fit with a Nmix model
 
 ##########################
 ### Simulate data ########
@@ -7,27 +6,29 @@
 
 # define study dimensions and some predictor variable values
 # consider the effect of site covariates on abundance
-n_sites = 28 # number of sites # must be an even number
+n_sites = 28 # number of sites 
 n_species = 20 # number of species
 n_visits = 3 # number of repeat visits (= number of temporal reps)
 n_years = 2 # number of years
 
 mu_alpha0 = 0.5 # abundance intercept
-sigma_alpha0_species = 1 # community variation in abundance intercept
-mu_alpha1 = 1.5 # community mean abundance response to management
+sigma_alpha0_species = 1.5 # community variation in abundance intercept
+mu_alpha1 = 1 # community mean in abundance response to management
 sigma_alpha1_species = 0.8 # community variation in abundance response to management
 mu_alpha2 = -0.2 # community mean in abundance response to year (only two years so treat as a binary, not categorcial effect)
 sigma_alpha2_species = 0.4 # community variation in abundance response to year
 sigma_alpha3_site = 0.25 # among site variation in abundance random effect
 
-mu_beta0 = 0 # detection intercept
+mu_beta0 = 1 # detection intercept
 sigma_beta0_species = 0.5 # community variation in detection intercept
-mu_beta1 = -0.75 # community mean detection response to management
+mu_beta1 = 0 # community mean detection response to management
 sigma_beta1_species = 0.25 # community variation in detection response to management
 beta2 = 0.2 # effect of year on detection rate (i.e., maybe we get better over time)
 
 poisson = FALSE # if false, simulate data from a negative binomial distribution
 phi = 0.7 #if using a negative binomial distribution, how much dispersion to use?
+
+use_max_counts = TRUE # if true, take max y per set of repeat visits, and send to model as a vector (rather than matrix)
 
 # Define function for generating binom-mix model data
 simulate_data <- function(
@@ -40,8 +41,8 @@ simulate_data <- function(
     mu_alpha1, 
     sigma_alpha1_species, 
     mu_alpha2, 
-    sigma_alpha2_species, 
-    sigma_alpha3_site, 
+    sigma_alpha2_species,
+    sigma_alpha3_site,
     
     mu_beta0,
     sigma_beta0_species, 
@@ -78,10 +79,6 @@ simulate_data <- function(
   # centered on community mean
   species_year_effect <- rnorm(n_species, mu_alpha2, sigma_alpha2_species)
   (mean(species_year_effect)) # should be near mu_alpha2
-  # add a site-level random effect for abundance
-  # centered on 0 (because we already have a global intercept mu_alpha0)
-  site_intercept <- rnorm(n_sites, 0, sigma_alpha3_site)
-  (mean(site_intercept)) # should be near mu_alpha2
   
   species_intercept_data <- as.numeric(vector(length=R))
   species_intercept_data <- rep(species_intercept[1:n_species], 
@@ -97,7 +94,7 @@ simulate_data <- function(
   
   site_intercept_data <- as.numeric(vector(length=R))
   site_intercept_data <- rep(site_intercept[1:n_sites], 
-                                each=n_species, times=n_years)
+                             each=n_species, times=n_years)
   
   df <- as.data.frame(cbind(year, sites, X, species, 
                             species_intercept_data, species_slope_data, species_year_data,
@@ -111,7 +108,7 @@ simulate_data <- function(
                   species_intercept_data[i] +
                   species_slope_data[i] * X[i] +
                   species_year_data[i] * year[i] + 
-                  site_intercept_data[i]
+                    site_intercept_data[i]
     )
   }
   
@@ -151,11 +148,11 @@ simulate_data <- function(
   
   species_intercept_detection_data <- as.numeric(vector(length=R))
   species_intercept_detection_data <- rep(species_intercept_detection[1:n_species], 
-                                times=R/n_species)
+                                          times=R/n_species)
   
   species_slope_detection_data <- as.numeric(vector(length=R))
   species_slope_detection_data <- rep(species_slope_detection[1:n_species], 
-                            times=R/n_species)
+                                      times=R/n_species)
   
   df <- as.data.frame(cbind(df, 
                             species_intercept_detection_data, 
@@ -168,7 +165,7 @@ simulate_data <- function(
   for(i in 1:length(p)){
     p[i] <- ilogit(species_intercept_detection_data[i] +
                      species_slope_detection_data[i] * X[i] +
-                   beta2 * year[i])
+                     beta2 * year[i])
   }
   
   df <- as.data.frame(cbind(df, p))
@@ -183,6 +180,10 @@ simulate_data <- function(
     for(j in 1:n_visits){
       y[i,j] <- rbinom(n = 1, size = abundance[i], prob = p[i])
     }
+  }
+  
+  if(use_max_counts == TRUE){
+    y <- apply(y, 1, max)
   }
   
   # Return stuff
@@ -210,14 +211,14 @@ my_simulated_data <- simulate_data(n_sites,
                                    mu_alpha1, 
                                    sigma_alpha1_species, 
                                    mu_alpha2, 
-                                   sigma_alpha2_species, 
-                                   sigma_alpha3_site, 
+                                   sigma_alpha2_species,
+                                   sigma_alpha3_site,
                                    
                                    mu_beta0,
                                    sigma_beta0_species, 
                                    mu_beta1, 
                                    sigma_beta1_species, 
-                                   beta2, 
+                                   beta2,
                                    
                                    poisson,
                                    phi)
@@ -233,14 +234,12 @@ species <- my_simulated_data$species
 years <- my_simulated_data$year
 df <- my_simulated_data$df
 
-y_max <- apply(y, 1, max)
-K <- (y_max + 3 * 5)
 
 ##########################
 ### Run model ############
 ##########################
 
-stan_data <- c("R", "K",
+stan_data <- c("R", 
                "sites",
                "n_sites",
                "species",
@@ -257,11 +256,7 @@ params <- c(
             "sigma_alpha1_species",
             "mu_alpha2",
             "sigma_alpha2_species",
-            "mu_beta0",
-            "sigma_beta0_species",
-            "mu_beta1",
-            "sigma_beta1_species",
-            "beta2",
+            "sigma_alpha3_site",
             "scale_param",
             #"alpha0_species",
             #"alpha1_species",
@@ -273,9 +268,9 @@ params <- c(
 
 
 # MCMC settings
-n_iterations <- 300
+n_iterations <- 400
 n_thin <- 1
-n_burnin <- 150
+n_burnin <- 200
 n_chains <- 4
 n_cores <- 4
 
@@ -289,16 +284,18 @@ inits <- lapply(1:n_chains, function(i)
        sigma_alpha1_species = runif(1, 0, 1),
        mu_alpha2 = runif(1, -1, 1),
        sigma_alpha2_species = runif(1, 0, 1),
-       mu_beta0 = runif(1, -1, 1),
-       sigma_beta0_species = runif(1, 0, 1),
-       mu_beta1 = runif(1, -1, 1),
-       sigma_beta1_species = runif(1, 0, 1),
-       beta2 = runif(1, -1, 1)
+       sigma_alpha3_site = runif(1, 0, 1)
   )
 )
 
 # Call STAN model from R 
-stan_model <- "./N_mixture/models/Nmix2_negbin_w_site_re.stan"
+#stan_model <- "./GLM/models/GLM1_poisson.stan"
+#stan_model <- "./GLM/models/GLM2_negbin.stan"
+if(use_max_counts == TRUE){
+  stan_model <- "./GLM/models/GLM4_negbin_w_site_re_max_counts.stan"
+} else {
+  stan_model <- "./GLM/models/GLM3_negbin_w_site_re.stan"
+}
 
 ## Call Stan from R
 library(rstan)
@@ -317,7 +314,6 @@ print(stan_out_sim, digits = 3)
 traceplot(stan_out_sim, pars = c("mu_alpha0", "sigma_alpha0_species",
                                  "mu_alpha1", "sigma_alpha1_species", 
                                  "mu_alpha2", "sigma_alpha2_species",
-                                 "sigma_alpha3_site",
                                  "scale_param"))
 
 
@@ -346,8 +342,7 @@ p
 
 # q: how good is our model at estimating the true abundance?
 (q <- mcmc_hist(stan_out_sim, pars = c("totalN[1]", "totalN[2]", 
-                                      "totalN[3]", "totalN[4]",
-                                      "totalN[5]", "totalN[6]"))
+                                      "totalN[3]", "totalN[4]"))
 )
 
 # plot posterior distribution
@@ -358,11 +353,11 @@ q <- q + labs(x = "totalN[1]",
   geom_vline(xintercept = my_simulated_data$totalN[1], linetype = "solid", size = 1)
 q
 
-q <- mcmc_hist(stan_out_sim, pars = c("totalN[12]"))
-q <- q + labs(x = "totalN[12]",
+q <- mcmc_hist(stan_out_sim, pars = c("totalN[2]"))
+q <- q + labs(x = "totalN[2]",
               y = "Frequency in 1000 Draws") +
   # xlim(nobs_in_sim, 150) +
-  geom_vline(xintercept = my_simulated_data$totalN[12], linetype = "solid", size = 1)
+  geom_vline(xintercept = my_simulated_data$totalN[2], linetype = "solid", size = 1)
 q
 
 # Evaluation of fit
