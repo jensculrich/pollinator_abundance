@@ -1,5 +1,7 @@
 ## simulate data for abundance from a Poisson or Negative Binomial distribution
-## with detection error, to fit with a Nmix model
+## with multinomial detection error, to fit with a multinomial (capture history) nmix model
+
+library(tidyverse) # for data carpentry
 
 ##########################
 ### Simulate data ########
@@ -8,11 +10,11 @@
 # define study dimensions and some predictor variable values
 # consider the effect of site covariates on abundance
 n_sites = 28 # number of sites # must be an even number
-n_species = 20 # number of species
+n_species = 12 # number of species
 n_visits = 3 # number of repeat visits (= number of temporal reps)
 n_years = 2 # number of years
 
-mu_alpha0 = 0.5 # abundance intercept
+mu_alpha0 = 0.75 # abundance intercept
 sigma_alpha0_species = 1 # community variation in abundance intercept
 mu_alpha1 = 1.5 # community mean abundance response to management
 sigma_alpha1_species = 0.8 # community variation in abundance response to management
@@ -24,10 +26,12 @@ mu_beta0 = 0 # detection intercept
 sigma_beta0_species = 0.5 # community variation in detection intercept
 mu_beta1 = -0.75 # community mean detection response to management
 sigma_beta1_species = 0.25 # community variation in detection response to management
-beta2 = 0.2 # effect of year on detection rate (i.e., maybe we get better over time)
+beta2 = 0 # effect of year on detection rate (i.e., maybe we get better over time)
 
 poisson = FALSE # if false, simulate data from a negative binomial distribution
 phi = 0.7 #if using a negative binomial distribution, how much dispersion to use?
+
+M_multiplier = 2.5 # multiplier for data augmentation (positive encounters * "" = max pop size)
 
 # Define function for generating binom-mix model data
 simulate_data <- function(
@@ -50,7 +54,9 @@ simulate_data <- function(
     beta2,
     
     poisson,
-    phi                
+    phi,
+    
+    M_multiplier
 ){
  
   # number of unique data observation points (observations of unique species at unique site)
@@ -131,6 +137,8 @@ simulate_data <- function(
 
   }
   
+  df <- as.data.frame(cbind(df, abundance))
+  
   totalN1 <- vector(length=n_species)
   totalN1 <- rowsum(abundance[1:(R/2)], rep(1:n_species, times = n_sites))
   totalN2 <- vector(length=n_species)
@@ -177,13 +185,112 @@ simulate_data <- function(
   hist(p[1:(R/4)], xlim = c(0,1))
   hist(p[(R/4):(R/2)], xlim = c(0,1))
   
+  # construct multinomial cell probabilities for three potential detection events
+  #cellprobs <- c(
+    #p*p*p, # 111
+    #p*p*(1-p), # 110
+    #p*(1-p)*p, # 101
+    #p*(1-p)*(1-p), # 100
+    #(1-p)*p*p, # 011
+    #(1-p)*p*(1-p), # 010
+    #(1-p)*(1-p)*p, # 001
+    #(1-p)*(1-p)*(1-p) # 000
+  #)
+  
+  df <- df %>%
+    mutate("p111" = p*p*p, # 111
+           "p110" = p*p*(1-p), # 110
+           "p101" = p*(1-p)*p, # 101
+           "p100" = p*(1-p)*(1-p), # 100
+           "p011" = (1-p)*p*p, # 011
+           "p010" = (1-p)*p*(1-p), # 010
+           "p001" = (1-p)*(1-p)*p, # 001
+           "p000" = (1-p)*(1-p)*(1-p) # 000)
+    )
+  
   # Make a 'census' (i.e., go out and count things)
-  y <- matrix(NA, nrow = length(p), ncol = n_visits) # Array for counts
+  y <- matrix(NA, nrow = length(abundance), ncol = 8) # 8 cols = 8 different possible detection histories 
   for(i in 1:nrow(y)){
-    for(j in 1:n_visits){
-      y[i,j] <- rbinom(n = 1, size = abundance[i], prob = p[i])
-    }
+    
+    # rmultinom(n, size, prob)
+    y[i, 1:8] <- rmultinom(1, size = abundance[i], prob = as.numeric(df[i, 13:20]))
+      
   }
+  
+  # we will use a data augmentation approach
+  # we will need to stretch out the encounter frequencies into a row per individual
+  # First, remove the 8th column (not detected individuals, i.e., the data we don't see)
+  y <- y[,-8]
+  colnames(y) <- c("111", "110", "101","100", "011", "010", "001")
+  
+  temp <- as.data.frame(cbind(sites, species, year, X, y)) %>%
+    pivot_longer(cols = starts_with(c("0", "1")), names_to = "eh", values_to = "count") %>%
+    uncount(count)
+  
+  # convert to matrix of whether an individual was encountered on each of 1:n visits
+  eh.mat <- matrix(NA, nrow=nrow(temp), ncol=n_visits)
+  for(i in 1:nrow(temp)){
+    eh.mat[i,] <- as.numeric(unlist(strsplit(temp$eh[i], split="")))
+  }
+  
+  temp <- cbind(temp, eh.mat)
+  
+  # how many rows per species
+  # nind <- nrow(eh.mat) 
+  nind <- temp %>%
+    group_by(species) %>%
+    add_tally() %>%
+    slice(1) %>%
+    ungroup() %>%
+    pull(n)
+  
+  # calculate a max number of missed individuals per species (number for the model to search up to)
+  M <- vector(length = n_species)
+  M <- as.integer(nind * M_multiplier) # as integer to round up to whole individuals
+  
+  augmentation_set <- as.data.frame(cbind(unique(species), M, nind,
+                                                  "1" = 0,
+                                                  "2" = 0,
+                                                  "3" = 0)) %>%
+    mutate(augmentation = M - nind) %>%
+    uncount(augmentation) %>%
+    dplyr::select(-M, -nind) %>%
+    rename("species" = "V1")
+    
+  y2 <- full_join(temp, augmentation_set)
+  
+  
+  
+  #y2 <- rbind (eh.mat, matrix(0, nrow=(M-nind), ncol=n_visits))
+  
+  # possible encounter histories
+  #eh <- c("111", "110", "101","100", "011",
+  #        "010", "001")
+  # encounter history id for positive counts
+  #ehid <- col(y)[y>0 & !is.na(y)]
+  #eh <- eh[ehid]
+  
+  #siteid <- row(y)[y>0 & !is.na(y)]
+  #siteid <- sites
+  #y2 <- y[y>0 & !is.na(y)]
+  
+  # expand eh for each indiviual * site with the history
+  #eh <- rep(eh, y2)
+  #siteid <- rep(siteid, y2)
+  
+  # convert to matrix of whether an individual was encountered on each of 1:n visits
+  #eh.mat <- matrix(NA, nrow=length(eh), ncol=n_visits)
+  #for(i in 1:length(eh)){
+  #  eh.mat[i,] <- as.numeric(unlist(strsplit(eh[i], split="")))
+  #}
+  
+  # define some things and do data augmentation (padding the data with 000's)
+  # our model will try to determine how many 000's would be realistic
+  #nind <- nrow(eh.mat) 
+  #M <- 12000
+  #y3 <- rbind(eh.mat, matrix(0, nrow=(M-nind), ncol=n_visits))
+  
+  #site <- c(siteid, rep(NA, M-nind))
   
   # Return stuff
   return(list(
@@ -196,7 +303,7 @@ simulate_data <- function(
     df = df, # combined year, site, species, covariate data
     abundance = abundance, # simulated abundance
     totalN = totalN, # simulated abundance per species across sites
-    y = y # observed abundance
+    y2 = y2 # observed and augmented encounter histories
   ))
      
 }
@@ -220,34 +327,43 @@ my_simulated_data <- simulate_data(n_sites,
                                    beta2, 
                                    
                                    poisson,
-                                   phi)
+                                   phi,
+                                   
+                                   M_multiplier)
 
-R <- my_simulated_data$R
+#R <- my_simulated_data$R
 X <- my_simulated_data$X
 species_data <- my_simulated_data$species_data
 abundance <- my_simulated_data$abundance
 totalN <- my_simulated_data$totalN
-y <- my_simulated_data$y
+y_df <- my_simulated_data$y2
 sites <- my_simulated_data$sites
 species <- my_simulated_data$species
 years <- my_simulated_data$year
 df <- my_simulated_data$df
 
-y_max <- apply(y, 1, max)
-K <- (y_max + 3 * 5)
+y <- as.matrix(y_df[6:8])
+species_aug <- as.vector(y_df$species)
+sites_aug <- as.vector(y_df$sites)
+year_aug <- as.vector(y_df$year)
+X_aug <- as.vector(y_df$X)
+
+R <- nrow(y)
+
 
 ##########################
 ### Run model ############
 ##########################
 
-stan_data <- c("R", "K",
-               "sites",
+stan_data <- c("R", 
+               "sites_aug",
                "n_sites",
-               "species",
-               "years",
+               "species_aug",
                "n_species", 
-               "n_visits", 
-               "y", "X")
+               "year_aug",
+               "n_visits",
+               "X_aug",
+               "y")
 
 # Parameters monitored
 params <- c(
@@ -298,7 +414,7 @@ inits <- lapply(1:n_chains, function(i)
 )
 
 # Call STAN model from R 
-stan_model <- "./N_mixture/models/Nmix2_negbin_w_site_re.stan"
+stan_model <- "./multinomial_nmix/models/multinomial_Nmix2_negbin_w_site_re.stan"
 
 ## Call Stan from R
 library(rstan)
