@@ -11,6 +11,7 @@ data {
   int<lower=0> y[M, n_visits]; // Counts observed on observation 1:R
   
 }
+
 transformed data {
   array[M] int<lower=0> s; // Totals in each row
   int<lower=0> C; // Size of observed data set

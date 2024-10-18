@@ -1,0 +1,31 @@
+
+model{
+
+# priors
+alpha0 ~ dnorm(0, 0.1)
+alpha1 ~ dnorm(0, 0.1)
+beta0 ~ dnorm(0, 0.1)
+beta1 ~ dnorm(0, 0.1)
+psi <- sum(lambda[]) / M # psi is a derived parameter
+
+# log-linear model for abundance: lambda depends on restoration
+for(s in 1:n_sites){
+  log(lambda[s]) <- alpha0 + alpha1 * X[s]
+  probs[s] <- lambda[s] / sum(lambda[])
+}
+
+# model for individual encounter histories
+for(i in 1:M){
+  sites[i] ~ dcat(probs[])
+  z[i] ~ dbern(psi)
+  
+  # observation model: p depends on structure
+  for(j in 1:J){
+    logit(p[i,j]) <- beta0 + beta1 * X[sites[i]]
+    pz[i,j] <- p[i,j] * z[i]
+    y[i,j] ~ dbern(pz[i,j])
+  }
+}
+}
+    
+
