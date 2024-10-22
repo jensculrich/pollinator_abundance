@@ -1,7 +1,11 @@
 ## simulate data for abundance from a Poisson or Negative Binomial distribution
 ## with multinomial detection error, to fit with a multinomial (capture history) nmix model
+## eventually I want to expand this into a multi-species multi-year model,
+## hence the options to add species and year effects. Setting the species and year effects
+## will simulate data for a single species for a singe year across n_sites spatial units.
 
-library(tidyverse) # for data carpentry
+library(tidyverse) # required for data carpentry
+library(rstan) # required to fit stan model
 
 ##########################
 ### Simulate data ########
@@ -9,7 +13,7 @@ library(tidyverse) # for data carpentry
 
 # define study dimensions and some predictor variable values
 # consider the effect of site covariates on abundance
-n_sites = 32 # number of sites # must be an even number
+n_sites = 64 # number of sites # must be an even number
 n_species = 1 # number of species
 n_visits = 3 # number of repeat visits (= number of temporal reps)
 n_years = 1 # number of years
@@ -22,7 +26,7 @@ mu_alpha2 = 0 # community mean in abundance response to year (only two years so 
 sigma_alpha2_species = 0 # community variation in abundance response to year
 sigma_alpha3_site = 0 # among site variation in abundance random effect
 
-mu_beta0 = -0.5 # detection intercept
+mu_beta0 = -1 # detection intercept
 sigma_beta0_species = 0 # community variation in detection intercept
 mu_beta1 = 0.5 # community mean detection response to management
 sigma_beta1_species = 0 # community variation in detection response to management
@@ -286,14 +290,17 @@ stan_data <- c("K",
 
 # Parameters monitored
 params <- c("mu_alpha0",
-            "mu_alpha1"
+            "mu_alpha1",
+            "mu_beta0",
+            "mu_beta1",
+            "totalN"
 )
 
 
 # MCMC settings
-n_iterations <- 300
+n_iterations <- 500
 n_thin <- 1
-n_burnin <- 150
+n_burnin <- 250
 n_chains <- 4
 n_cores <- 4
 
@@ -309,10 +316,9 @@ inits <- lapply(1:n_chains, function(i)
 )
 
 # Call STAN model from R 
-stan_model <- "./multinomial_nmix/models/multinomial_Nmix_simple4.stan"
+stan_model <- "./multinomial_nmix/models/multinomial_Nmix_model.stan"
 
 ## Call Stan from R
-library(rstan)
 stan_out_sim <- stan(stan_model,
                    data = stan_data, 
                    init = inits, 
