@@ -329,9 +329,4 @@ stan_out_sim <- stan(stan_model,
                    open_progress = FALSE,
                    cores = n_cores)
 
-# Output:
-#"Chain 1: Rejecting initial value:
-#Chain 1:   Log probability evaluates to log(0), i.e. negative infinity.
-#Chain 1:   Stan can't start sampling from this initial value."
-
 print(stan_out_sim, digits = 3)
