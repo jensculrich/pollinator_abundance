@@ -1,7 +1,11 @@
 ## simulate data for abundance from a Poisson or Negative Binomial distribution
 ## with multinomial detection error, to fit with a multinomial (capture history) nmix model
+## eventually I want to expand this into a multi-species multi-year model,
+## hence the options to add species and year effects. Setting the species and year effects
+## will simulate data for a single species for a singe year across n_sites spatial units.
 
-library(tidyverse) # for data carpentry
+library(tidyverse) # required for data carpentry
+library(rstan) # required to fit stan model
 
 ##########################
 ### Simulate data ########
@@ -9,7 +13,7 @@ library(tidyverse) # for data carpentry
 
 # define study dimensions and some predictor variable values
 # consider the effect of site covariates on abundance
-n_sites = 100 # number of sites # must be an even number
+n_sites = 64 # number of sites # must be an even number
 n_species = 1 # number of species
 n_visits = 3 # number of repeat visits (= number of temporal reps)
 n_years = 1 # number of years
@@ -22,7 +26,7 @@ mu_alpha2 = 0 # community mean in abundance response to year (only two years so 
 sigma_alpha2_species = 0 # community variation in abundance response to year
 sigma_alpha3_site = 0 # among site variation in abundance random effect
 
-mu_beta0 = -0.5 # detection intercept
+mu_beta0 = -1 # detection intercept
 sigma_beta0_species = 0 # community variation in detection intercept
 mu_beta1 = 0.5 # community mean detection response to management
 sigma_beta1_species = 0 # community variation in detection response to management
@@ -112,11 +116,11 @@ simulate_data <- function(
   # Relationship expected abundance – covariate + variation in species
   # determined in part by species-level effect on abundance
   lambda <- vector(length=R)
+  
   for(i in 1:length(lambda)){ 
     lambda[i] <- exp(
                   species_intercept_data[i] +
                   species_slope_data[i] * X[i] +
-                  #species_year_data[i] * year[i] + 
                   site_intercept_data[i]
     )
   }
@@ -138,12 +142,6 @@ simulate_data <- function(
   }
   
   df <- as.data.frame(cbind(df, abundance))
-  
-  #totalN1 <- vector(length=n_species)
-  #totalN1 <- rowsum(abundance[1:(R/2)], rep(1:n_species, times = n_sites))
-  #totalN2 <- vector(length=n_species)
-  #totalN2 <- rowsum(abundance[(R/2 + 1):R], rep(1:n_species, times = n_sites))
-  #totalN = totalN1 + totalN2
   
   totalN = sum(abundance)
   
@@ -184,10 +182,6 @@ simulate_data <- function(
   
   df <- as.data.frame(cbind(df, p))
   
-  par(mfrow = c(2, 1))
-  hist(p[1:(R/2)], xlim = c(0,1)) 
-  hist(p[(R/2 + 1):R], xlim = c(0,1))
-  
   # construct multinomial cell probabilities for three potential detection events
   #cellprobs <- c(
     #p*p*p, # 111
@@ -224,90 +218,29 @@ simulate_data <- function(
   # we will need to stretch out the encounter frequencies into a row per individual
   # First, remove the 8th column (not detected individuals, i.e., the data we don't see)
   y <- y[,-8]
+  
+  y_cell_matrix <- y
+  
+  nobs <- apply(y_cell_matrix, 1, sum)
+  
+  K = max(nobs) * 2
+  
   colnames(y) <- c("111", "110", "101","100", "011", "010", "001")
-  
-  temp <- as.data.frame(cbind(sites, species, X, y)) %>%
-    pivot_longer(cols = starts_with(c("0", "1")), names_to = "eh", values_to = "count") %>%
-    uncount(count)
-  
-  # convert to matrix of whether an individual was encountered on each of 1:n visits
-  eh.mat <- matrix(NA, nrow=nrow(temp), ncol=n_visits)
-  for(i in 1:nrow(temp)){
-    eh.mat[i,] <- as.numeric(unlist(strsplit(temp$eh[i], split="")))
-  }
-  
-  temp <- cbind(temp, eh.mat)
-  
-  # how many rows per species
-  # nind <- nrow(eh.mat) 
-  nind <- temp %>%
-    group_by(species) %>%
-    add_tally() %>%
-    slice(1) %>%
-    ungroup() %>%
-    pull(n)
-  
-  # calculate a max number of missed individuals per species (number for the model to search up to)
-  M <- vector(length = n_species)
-  M <- as.integer(nind * M_multiplier) # as integer to round up to whole individuals
-  
-  augmentation_set <- as.data.frame(cbind(unique(species), M, nind,
-                                                  "1" = 0,
-                                                  "2" = 0,
-                                                  "3" = 0)) %>%
-    mutate(augmentation = M - nind) %>%
-    uncount(augmentation) %>%
-    dplyr::select(-M, -nind) %>%
-    rename("species" = "V1")
-    
-  y2 <- full_join(temp, augmentation_set)
-  
-  
-  
-  #y2 <- rbind (eh.mat, matrix(0, nrow=(M-nind), ncol=n_visits))
-  
-  # possible encounter histories
-  #eh <- c("111", "110", "101","100", "011",
-  #        "010", "001")
-  # encounter history id for positive counts
-  #ehid <- col(y)[y>0 & !is.na(y)]
-  #eh <- eh[ehid]
-  
-  #siteid <- row(y)[y>0 & !is.na(y)]
-  #siteid <- sites
-  #y2 <- y[y>0 & !is.na(y)]
-  
-  # expand eh for each indiviual * site with the history
-  #eh <- rep(eh, y2)
-  #siteid <- rep(siteid, y2)
-  
-  # convert to matrix of whether an individual was encountered on each of 1:n visits
-  #eh.mat <- matrix(NA, nrow=length(eh), ncol=n_visits)
-  #for(i in 1:length(eh)){
-  #  eh.mat[i,] <- as.numeric(unlist(strsplit(eh[i], split="")))
-  #}
-  
-  # define some things and do data augmentation (padding the data with 000's)
-  # our model will try to determine how many 000's would be realistic
-  #nind <- nrow(eh.mat) 
-  #M <- 12000
-  #y3 <- rbind(eh.mat, matrix(0, nrow=(M-nind), ncol=n_visits))
-  
-  #site <- c(siteid, rep(NA, M-nind))
   
   # Return stuff
   return(list(
     # simulated data outcomes 
-    R = R,
+    y_w_names = y,
+    y = y_cell_matrix,
+    nobs = nobs,
+    K = K,
     X = X, # simulated covariate values,
     sites = sites,
     species = species,
     year = year,
     df = df, # combined year, site, species, covariate data
     abundance = abundance, # simulated abundance
-    totalN = totalN, # simulated abundance per species across sites
-    y2 = y2, # observed and augmented encounter histories,
-    nind = nind
+    totalN = totalN # simulated abundance per species across sites
   ))
      
 }
@@ -335,37 +268,20 @@ my_simulated_data <- simulate_data(n_sites,
                                    
                                    M_multiplier)
 
-R <- my_simulated_data$R
+y <- my_simulated_data$y
+y_names <- my_simulated_data$y_w_names
+nobs <- my_simulated_data$nobs
 X <- my_simulated_data$X
-species_data <- my_simulated_data$species_data
-abundance <- my_simulated_data$abundance
+K <- my_simulated_data$K
 totalN <- my_simulated_data$totalN
-y_df <- my_simulated_data$y2
 sites <- my_simulated_data$sites
-species <- my_simulated_data$species
-years <- my_simulated_data$year
-df <- my_simulated_data$df
-
-y <- as.matrix(y_df[5:7])
-species_aug <- as.vector(y_df$species)
-sites_aug <- as.vector(y_df$sites)
-year_aug <- as.vector(y_df$year)
-X_aug <- as.vector(y_df$X)
-
-# for multimix model
-M <- nrow(y)
-nind <- my_simulated_data$nind
-sites <- sites_aug
-
-# for cjs model
-#nind <- my_simulated_data$nind
-#y <- y[1:nind,]
 
 ##########################
 ### Run model ############
 ##########################
 
-stan_data <- c("M", "nind",
+stan_data <- c("K", 
+               "nobs",
                "X",
                "n_visits",
                "n_sites",
@@ -377,14 +293,14 @@ params <- c("mu_alpha0",
             "mu_alpha1",
             "mu_beta0",
             "mu_beta1",
-            "omega"
+            "totalN"
 )
 
 
 # MCMC settings
-n_iterations <- 300
+n_iterations <- 500
 n_thin <- 1
-n_burnin <- 150
+n_burnin <- 250
 n_chains <- 4
 n_cores <- 4
 
@@ -393,27 +309,19 @@ n_cores <- 4
 # otherwise sometimes they have a hard time starting to sample
 inits <- lapply(1:n_chains, function(i)
   list(mu_alpha0 = runif(1, -1, 1),
-       sigma_alpha0_species = runif(1, 0, 1),
        mu_alpha1 = runif(1, -1, 1),
-       sigma_alpha1_species = runif(1, 0, 1),
-       mu_alpha2 = runif(1, -1, 1),
-       sigma_alpha2_species = runif(1, 0, 1),
        mu_beta0 = runif(1, -1, 1),
-       sigma_beta0_species = runif(1, 0, 1),
-       mu_beta1 = runif(1, -1, 1),
-       sigma_beta1_species = runif(1, 0, 1),
-       beta2 = runif(1, -1, 1)
+       mu_beta1 = runif(1, -1, 1)
   )
 )
 
 # Call STAN model from R 
-stan_model <- "./multinomial_nmix/models/multinomial_Nmix_simple3.stan"
+stan_model <- "./multinomial_nmix/models/multinomial_Nmix_model.stan"
 
 ## Call Stan from R
-library(rstan)
 stan_out_sim <- stan(stan_model,
                    data = stan_data, 
-                   #init = inits, 
+                   init = inits, 
                    pars = params,
                    chains = n_chains, iter = n_iterations, 
                    warmup = n_burnin, thin = n_thin,
@@ -422,157 +330,3 @@ stan_out_sim <- stan(stan_model,
                    cores = n_cores)
 
 print(stan_out_sim, digits = 3)
-
-# try jags version
-
-# specify model
-cat("
-model{
-
-# priors
-alpha0 ~ dnorm(0, 0.1)
-alpha1 ~ dnorm(0, 0.1)
-beta0 ~ dnorm(0, 0.1)
-beta1 ~ dnorm(0, 0.1)
-psi <- sum(lambda[]) / M # psi is a derived parameter
-
-# log-linear model for abundance: lambda depends on restoration
-for(s in 1:n_sites){
-  log(lambda[s]) <- alpha0 + alpha1 * X[s]
-  probs[s] <- lambda[s] / sum(lambda[])
-}
-
-# model for individual encounter histories
-for(i in 1:M){
-  sites[i] ~ dcat(probs[])
-  z[i] ~ dbern(psi)
-  
-  # observation model: p depends on structure
-  for(j in 1:J){
-    logit(p[i,j]) <- beta0 + beta1 * X[sites[i]]
-    pz[i,j] <- p[i,j] * z[i]
-    y[i,j] ~ dbern(pz[i,j])
-  }
-}
-}
-    
-", fill=TRUE, file="./multinomial_nmix/models/model.txt")
-
-data <- list(y = y, J=n_visits, M = M, n_sites = n_sites, X = X, sites = sites)
-
-params <- c("alpha0",
-            "alpha1",
-            "beta0",
-            "beta1",
-            "psi")
-
-inits <- function(){
-  list(alpha0=runif(1), alpha1=runif(1), beta0=runif(1), beta1=runif(1),
-       z=c(rep(1,(nind*1.5+1)), rep(0,M-(nind*1.5))))
-}
-
-ni <- 11000
-nb <- 1000
-nt <- 4
-nc <- 3
-
-model <- "./multinomial_nmix/models/model.txt"
-
-library("jagsUI")
-out <- jags(data, inits, 
-            params, model, n.thin = nt,
-            n.chains = nc, n.burnin = nb, n.iter = ni)
-
-print(out, digits=3)
-
-
-
-
-
-
-
-generated quantities {
-  
-  vector<lower=0, upper=1>[M] p = inv_logit(logit_p);
-  array[M] int<lower=0, upper=1> z;
-  int<lower=nind> totalN;
-  
-  for (i in 1 : M) {
-    if (s[i] > 0) {
-      // species was detected at least once
-      z[i] = 1;
-    } else {
-      // species was never detected
-      // prob never detected given present
-      real pr = prod(rep_vector(1, n_visits) - p[i]);
-      z[i] = bernoulli_rng(omega * pr / (omega * pr + (1 - omega)));
-    }
-  }
-  totalN = sum(z);
-}
-
-traceplot(stan_out_sim, pars = c("mu_alpha0", "sigma_alpha0_species",
-                                 "mu_alpha1", "sigma_alpha1_species", 
-                                 "mu_alpha2", "sigma_alpha2_species",
-                                 "sigma_alpha3_site",
-                                 "scale_param"))
-
-
-library(bayesplot)
-library(tidyverse)
-
-# p: how good is our model at estimating the parameters?
-# plot posterior distribution
-p <- mcmc_hist(stan_out_sim, pars = c("mu_alpha0"))
-p <- p + labs(x = "mu_alpha0",
-              y = "Frequency in 1000 Draws") +
-  geom_vline(xintercept = mu_alpha0, linetype = "solid", size = 1)
-p
-
-p <- mcmc_hist(stan_out_sim, pars = c("mu_alpha1"))
-p <- p + labs(x = "mu_alpha1",
-              y = "Frequency in 1000 Draws") +
-  geom_vline(xintercept = mu_alpha1, linetype = "solid", size = 1)
-p
-
-p <- mcmc_hist(stan_out_sim, pars = c("mu_alpha2"))
-p <- p + labs(x = "mu_alpha2",
-              y = "Frequency in 1000 Draws") +
-  geom_vline(xintercept = mu_alpha2, linetype = "solid", size = 1)
-p
-
-# q: how good is our model at estimating the true abundance?
-(q <- mcmc_hist(stan_out_sim, pars = c("totalN[1]", "totalN[2]", 
-                                      "totalN[3]", "totalN[4]",
-                                      "totalN[5]", "totalN[6]"))
-)
-
-# plot posterior distribution
-q <- mcmc_hist(stan_out_sim, pars = c("totalN[1]"))
-q <- q + labs(x = "totalN[1]",
-              y = "Frequency in 1000 Draws") +
-  # xlim(nobs_in_sim, 150) +
-  geom_vline(xintercept = my_simulated_data$totalN[1], linetype = "solid", size = 1)
-q
-
-q <- mcmc_hist(stan_out_sim, pars = c("totalN[12]"))
-q <- q + labs(x = "totalN[12]",
-              y = "Frequency in 1000 Draws") +
-  # xlim(nobs_in_sim, 150) +
-  geom_vline(xintercept = my_simulated_data$totalN[12], linetype = "solid", size = 1)
-q
-
-# Evaluation of fit
-list_of_draws <- as.data.frame(stan_out_sim)
-
-par(mfrow = c(1, 1))
-
-plot(list_of_draws$fit, list_of_draws$fit_new, main = "", xlab =
-       "Discrepancy actual data", ylab = "Discrepancy replicate data",
-     frame.plot = FALSE,
-     ylim = c(20000, 150000),
-     xlim = c(20000, 150000))
-abline(0, 1, lwd = 2, col = "black")
-
-mean(list_of_draws$fit_new > list_of_draws$fit)
-mean(list_of_draws$fit) / mean(list_of_draws$fit_new)
