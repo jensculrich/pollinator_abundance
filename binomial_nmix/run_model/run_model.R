@@ -99,9 +99,9 @@ params <- c(
 
 
 # MCMC settings
-n_iterations <- 500
+n_iterations <- 4000
 n_thin <- 1
-n_burnin <- 250
+n_burnin <- 2000
 n_chains <- 4
 n_cores <- 4
 
@@ -138,6 +138,7 @@ stan_out <- stan(stan_model,
                      open_progress = FALSE,
                      cores = n_cores)
 
+saveRDS(stan_out, "./model_outputs/real_data/binomial_Nmix.rds")
 print(stan_out, digits = 3)
 
 traceplot(stan_out, pars = c("mu_alpha0", "sigma_alpha0_species",

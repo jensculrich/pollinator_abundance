@@ -101,9 +101,9 @@ params <- c(
 
 
 # MCMC settings
-n_iterations <- 800
+n_iterations <- 4000
 n_thin <- 1
-n_burnin <- 400
+n_burnin <- n_iterations / 2
 n_chains <- 4
 n_cores <- 4
 
@@ -144,6 +144,7 @@ stan_out <- stan(stan_model,
                      open_progress = FALSE,
                      cores = n_cores)
 
+saveRDS(stan_out, "./model_outputs/real_data/GLM.rds")
 print(stan_out, digits = 3)
 
 traceplot(stan_out, pars = c("mu_alpha0", "sigma_alpha0_species",

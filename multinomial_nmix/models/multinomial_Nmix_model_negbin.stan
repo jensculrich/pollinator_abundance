@@ -29,6 +29,7 @@ parameters {
   real<lower=0> sigma_alpha2_species; // among species variation in year effects
   vector[n_sites] alpha3_site_raw; // vector of site specific intercept effects
   real<lower=0> sigma_alpha3_site; // among site variation in intercepts
+  real<lower=0> scale_param;
   // DETECTION
   real mu_beta0; // global interecept for abundance
   vector[n_species] beta0_species_raw; // species-specific intercepts
@@ -68,7 +69,7 @@ transformed parameters {
       (alpha1_species[species[i]] * X[i]) + // a species specific effect (restoration)
       (alpha2_species[species[i]] * year[i]) + // a species specific effect (year)
       alpha3_site[sites[i]]; // site random effect
-  p = inv_logit( // inv logit (detection probability) is equal to..
+    p[i] = inv_logit( // inv logit (detection probability) is equal to..
         beta0_species[species[i]] + // a species specific intercept  
         (beta1_species[species[i]] * X[i]) + // a species specific effect (restoration)
         (beta2 * year[i])); // an effect (year)
@@ -109,6 +110,8 @@ model {
   // site random effect on intercept
   alpha3_site_raw ~ std_normal();
   sigma_alpha3_site ~ normal(0, 1);
+  // neg bin scale param
+  scale_param ~ normal(0, 1);
   // DETECTION
   // intercepts
   mu_beta0 ~ normal(0, 2); // persistence intercept
@@ -128,7 +131,7 @@ model {
     vector[7] site_cellprobs = to_vector(cellprobs_conditional[i,1:7]);
     for (j in 1:length_lp) { // for each possible abundance:
       int latent_abundance = nobs[i] + j - 1;
-      lp[j] = poisson_log_lpmf(latent_abundance | lambda[i]) + // abundance
+      lp[j] = neg_binomial_2_log_lpmf(latent_abundance | lambda[i], scale_param) + // abundance
             binomial_lpmf(nobs[i] | latent_abundance, p_det[i]) + // detection of n ind
             multinomial_lpmf(y[i,1:7] | site_cellprobs); // observed detection histories
     }
@@ -153,7 +156,7 @@ generated quantities {
  
   // predict abundance given log_mu
   for (i in 1:R) {
-    N[i] = poisson_log_rng(lambda[i]);
+    N[i] = neg_binomial_2_log_rng(lambda[i], scale_param);
   }
   
   // Bayesian p-value fit. 
@@ -173,7 +176,7 @@ generated quantities {
 
       // Assess model fit using Chi-squared discrepancy
       // Compute fit statistic E for observed data
-      eval[i] = p_det[i] * poisson_log_rng(lambda[i]); // expected value at observation i for visit j 
+      eval[i] = p_det[i] * neg_binomial_2_log_rng(lambda[i], scale_param); // expected value at observation i for visit j 
         // (probabilty across visits is fixed) is = expected detection prob * expected abundance
       // Compute fit statistic E_new for real data (y)
       E[i] = square(nobs[i] - eval[i]) / (eval[i] + 0.5);
