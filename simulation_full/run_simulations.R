@@ -36,9 +36,9 @@ mu_alpha2 = 0 # community mean in abundance response to year (only two years so 
 sigma_alpha2_species = 0 # community variation in abundance response to year
 sigma_alpha3_site = 0.5 # among site variation in abundance random effect
 
-mu_beta0 = 0 # detection intercept
+mu_beta0 = -2 # detection intercept
 sigma_beta0_species = 0.5 # community variation in detection intercept
-mu_beta1 = -0.5 # community mean detection response to management
+mu_beta1 = 1 # community mean detection response to management
 sigma_beta1_species = 0.5 # community variation in detection response to management
 beta2 = 0 # effect of year on detection rate (i.e., maybe we get better over time)
 

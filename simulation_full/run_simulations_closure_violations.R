@@ -39,8 +39,9 @@ sigma_alpha3_site = 0.5 # among site variation in abundance random effect
 # set theta == 1 to perfectly satisfy closure assumptions.
 # lower values mean that individuals in some true population have some probability < 1
 # of being available for detection in the plot during the survey date.
-theta0 = 0.8 
-theta_habitat_effect = -0.4 # in the range of... -0.4, -0.2, 0, 0.2
+# do these on the logit scale
+theta0 = 2 # in the range of...  0.5, 0.6, 0.7, 0.8
+theta_habitat_effect = 0 # in the range of... -0.4, -0.2, 0, 0.2
 
 mu_beta0 = 0 # detection intercept
 sigma_beta0_species = 0.5 # community variation in detection intercept
