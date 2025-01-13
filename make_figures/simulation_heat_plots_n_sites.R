@@ -43,7 +43,7 @@ df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
 
 p <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient2(low = "dodgerblue1", mid = "white", high = "firebrick1", na.value = NA,
+  scale_fill_gradient2(low = "#6bb4ff", mid = "white", high = "#ff6b6b", na.value = NA,
                        breaks=c(-1,-0.5,0,0.5,1), limits = c(-1, 1)) +
   labs(fill="bias") +
   geom_text(data = df, 
@@ -54,7 +54,7 @@ p <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_text(data = df, 
             aes(x = n_sites, y = beta1, label = signif(means,2)),
             vjust = -1.5, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
+  xlab("n sites") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
@@ -99,7 +99,7 @@ df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
 
 p2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient(low = "#faf6e3", high = "#b0981c", na.value = NA,
+  scale_fill_gradient(low = "#fbf3ff", high = "#b595c5", na.value = NA,
                       breaks=c(0,1,2), limits = c(0, 2)) +
   labs(fill="precision") +
   geom_text(data = df, 
@@ -110,7 +110,7 @@ p2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_text(data = df, 
             aes(x = n_sites, y = beta1, label = signif(means,4)),
             vjust = -1.5, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
+  xlab("n sites") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
@@ -163,7 +163,7 @@ df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
 
 q <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient2(low = "dodgerblue1", mid = "white", high = "firebrick1", na.value = NA,
+  scale_fill_gradient2(low = "#6bb4ff", mid = "white", high = "#ff6b6b", na.value = NA,
                        breaks=c(-1,-0.5,0,0.5,1), limits = c(-1, 1)) +
   labs(fill="bias") +
   geom_text(data = df, 
@@ -174,7 +174,7 @@ q <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_text(data = df, 
             aes(x = n_sites, y = beta1, label = signif(means,2)),
             vjust = -1.5, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
+  xlab("n sites") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
@@ -219,7 +219,7 @@ df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
 
 q2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient(low = "#faf6e3", high = "#b0981c", na.value = NA,
+  scale_fill_gradient(low = "#fbf3ff", high = "#b595c5", na.value = NA,
                       breaks=c(0,1,2), limits = c(0, 2)) +
   labs(fill="precision") +
   geom_text(data = df, 
@@ -230,7 +230,7 @@ q2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_text(data = df, 
             aes(x = n_sites, y = beta1, label = signif(means,4)),
             vjust = -1.5, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
+  xlab("n sites") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
@@ -284,7 +284,7 @@ df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
 
 r <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient2(low = "dodgerblue1", mid = "white", high = "firebrick1", na.value = NA,
+  scale_fill_gradient2(low = "#6bb4ff", mid = "white", high = "#ff6b6b", na.value = NA,
                       breaks=c(-1,-0.5,0,0.5,1), limits = c(-1, 1)) +
   labs(fill="bias") +
   geom_text(data = df, 
@@ -295,7 +295,7 @@ r <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_text(data = df, 
             aes(x = n_sites, y = beta1, label = signif(means,2)),
             vjust = -1.5, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
+  xlab("n sites") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
@@ -340,7 +340,7 @@ df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
 
 r2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient(low = "#faf6e3", high = "#b0981c", na.value = NA,
+  scale_fill_gradient(low = "#fbf3ff", high = "#b595c5", na.value = NA,
                       breaks=c(0,1,2), limits = c(0, 2)) +
   labs(fill="precision") +
   geom_text(data = df, 
@@ -351,7 +351,7 @@ r2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_text(data = df, 
             aes(x = n_sites, y = beta1, label = signif(means,4)),
             vjust = -1.5, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
+  xlab("n sites") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),

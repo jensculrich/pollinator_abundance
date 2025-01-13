@@ -15,10 +15,12 @@ library(rstan) # required to fit stan model
 type <- "multimix"
 type <- "binmix"
 
-n_sims <- 10
+n_sims <- 20
 n_draws_per_sim <- 250
-estimates <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
-precision <- vector(length=n_sims)
+mu_alpha1 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
+precision_mu_alpha1 <- vector(length=n_sims)
+mu_alpha0 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
+mu_beta0 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
 
 # define study dimensions and some predictor variable values
 # consider the effect of site covariates on abundance
@@ -27,7 +29,7 @@ n_species = 16 # number of species
 n_visits = 3 # number of repeat visits (= number of temporal reps)
 n_years = 2 # number of years
 
-mu_alpha0 = 2 # abundance intercept
+mu_alpha0 = 3 # abundance intercept
 sigma_alpha0_species = 0.5 # community variation in abundance intercept
 mu_alpha1 = 1 # community mean abundance response to management
 sigma_alpha1_species = 0.5 # community variation in abundance response to management
@@ -40,12 +42,12 @@ sigma_alpha3_site = 0.5 # among site variation in abundance random effect
 # lower values mean that individuals in some true population have some probability < 1
 # of being available for detection in the plot during the survey date.
 # do these on the logit scale
-theta0 = 2 # in the range of...  0.5, 0.6, 0.7, 0.8
-theta_habitat_effect = 0 # in the range of... -0.4, -0.2, 0, 0.2
+theta0 = 2 # in the range of...  -1, 0, 1, 2
+theta_habitat_effect = 1 # in the range of... -2,-1, 0, 1, 2
 
-mu_beta0 = 0 # detection intercept
+mu_beta0 = -2 # detection intercept
 sigma_beta0_species = 0.5 # community variation in detection intercept
-mu_beta1 = -0.5 # community mean detection response to management
+mu_beta1 = 0 # community mean detection response to management
 sigma_beta1_species = 0.5 # community variation in detection response to management
 beta2 = 0 # effect of year on detection rate (i.e., maybe we get better over time)
 
@@ -105,8 +107,8 @@ for(i in 1:n_sims){
   n_iterations <- 300
   n_thin <- 1
   n_burnin <- n_iterations / 2
-  n_chains <- 4
-  n_cores <- 4
+  n_chains <- 6
+  n_cores <- n_chains
   
   if(type == "multimix"){ # prep stan for multinomial nmix
     
@@ -133,6 +135,7 @@ for(i in 1:n_sims){
                 "mu_beta1",
                 "sigma_beta1_species",
                 "beta2",
+                "sigma_beta3_site",
                 "fit",
                 "fit_new",
                 "totalN"
@@ -152,7 +155,8 @@ for(i in 1:n_sims){
            sigma_beta0_species = runif(1, 0, 1),
            mu_beta1 = runif(1, -1, 1),
            sigma_beta1_species = runif(1, 0, 1),
-           beta2 = runif(1, -0.5, 0.5)
+           beta2 = runif(1, -0.5, 0.5),
+           sigma_beta3_site = runif(1, 0, 1)
       )
     )
     
@@ -185,6 +189,7 @@ for(i in 1:n_sims){
                 "mu_beta1",
                 "sigma_beta1_species",
                 "beta2",
+                "sigma_beta3_site",
                 "fit",
                 "fit_new",
                 "totalN"
@@ -204,7 +209,8 @@ for(i in 1:n_sims){
            sigma_beta0_species = runif(1, 0, 1),
            mu_beta1 = runif(1, -1, 1),
            sigma_beta1_species = runif(1, 0, 1),
-           beta2 = runif(1, -0.5, 0.5)
+           beta2 = runif(1, -0.5, 0.5),
+           sigma_beta3_site = runif(1, 0, 1)
       )
     )
     
@@ -270,30 +276,29 @@ for(i in 1:n_sims){
   
   # capture the mean estimate
   #fit_summary <- rstan::summary(stan_out_sim)
-  list_of_draws <- as.data.frame(stan_out_sim)[,3]
-  estimates[i, 1:n_draws_per_sim] <- sample(list_of_draws, size = n_draws_per_sim)
+  list_of_draws_mu_alpha1 <- as.data.frame(stan_out_sim)[,3]
+  mu_alpha1[i, 1:n_draws_per_sim] <- sample(list_of_draws_mu_alpha1, size = n_draws_per_sim)
   
-  quantiles <- quantile(list_of_draws, c(0.05, 0.95))
-  precision[i] <- quantiles[2] - quantiles[1]
+  quantiles <- quantile(list_of_draws_mu_alpha1, c(0.05, 0.95))
+  precision_mu_alpha1[i] <- quantiles[2] - quantiles[1]
+  
+  list_of_draws_mu_alpha0 <- as.data.frame(stan_out_sim)[,1]
+  mu_alpha0[i, 1:n_draws_per_sim] <- sample(list_of_draws, size = n_draws_per_sim)
+  
+  list_of_draws_mu_beta0 <- as.data.frame(stan_out_sim)[,8]
+  mu_beta0[i, 1:n_draws_per_sim] <- sample(list_of_draws, size = n_draws_per_sim)
   
   print(i)
   
 }
 
+temp_list <- list(mu_alpha1, precision_mu_alpha1, mu_alpha0, mu_beta0)
+
 # save outputs
-saveRDS(estimates, paste0(
-  "./simulation_full/simulation_outputs/estimates/",
+saveRDS(temp_list, paste0(
+  "./simulation_full/simulation_outputs/closure_violations/",
   type, 
   "_alpha1=", mu_alpha1,
-  "_beta0=", mu_beta0, 
-  "_beta1=", mu_beta1, 
+  "_theta0=", theta0, 
+  "_theta1=", theta_habitat_effect, 
   ".rds"))
-
-saveRDS(precision, paste0(
-  "./simulation_full/simulation_outputs/precision/",
-  type, 
-  "_alpha1=", mu_alpha1,
-  "_beta0=", mu_beta0, 
-  "_beta1=", mu_beta1, 
-  ".rds"))
-

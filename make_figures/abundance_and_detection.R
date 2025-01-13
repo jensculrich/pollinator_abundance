@@ -3,19 +3,11 @@
 library(tidyverse)
 library(rstan)
 
-multinomial <- readRDS("./model_outputs/real_data/multinomial_Nmix.rds")
-binomial <- readRDS("./model_outputs/real_data/binomial_Nmix.rds")
-glm <- readRDS("./model_outputs/real_data/GLM.rds")
+multimix <- as.data.frame(readRDS("./model_outputs/real_data/multinomial_Nmix.rds"))
+binmix <- as.data.frame(readRDS("./model_outputs/real_data/binomial_Nmix.rds"))
+glm <- as.data.frame(readRDS("./model_outputs/real_data/GLM.rds"))
 
-fit_summary1 <- rstan::summary(multinomial)
-fit_summary2 <- rstan::summary(binomial)
-fit_summary3 <- rstan::summary(glm)
-
-View(cbind(1:nrow(fit_summary1$summary), fit_summary1$summary)) # View to see which row corresponds to the parameter of interest
-View(cbind(1:nrow(fit_summary2$summary), fit_summary2$summary)) # View to see which row corresponds to the parameter of interest
-View(cbind(1:nrow(fit_summary3$summary), fit_summary3$summary)) # View to see which row corresponds to the parameter of interest
-
-n_species <- length(7)
+n_species <- length(8)
 
 ## --------------------------------------------------
 ## Plot ecological paramter means and variation
@@ -24,94 +16,74 @@ n_species <- length(7)
 # mu_alpha0, mu_alpha1, mu_beta0, mu_beta1
 X_eco <- seq(1:10) # 10 ecological params of interest
 # mean of eco params
-Y_eco <- c(fit_summary1$summary[1,1], # mu_alpha0
-           fit_summary2$summary[1,1], # mu_alpha0
-           fit_summary3$summary[1,1], # mu_alpha0
-           fit_summary1$summary[3,1], # mu_alpha1
-           fit_summary2$summary[3,1], # mu_alpha1
-           fit_summary3$summary[3,1], # mu_alpha1
-           fit_summary1$summary[9,1], # mu_beta0
-           fit_summary2$summary[8,1], # mu_beta0
-           fit_summary1$summary[11,1], # mu_beta1
-           fit_summary2$summary[10,1] # mu_beta1
+Y_eco <- c(quantile(multimix$mu_alpha0, 0.5), # mu_alpha0
+           quantile(binmix$mu_alpha0, 0.5), # mu_alpha0
+           quantile(glm$mu_alpha0, 0.5), # mu_alpha0
+           quantile(multimix$mu_alpha1, 0.5), # mu_alpha1
+           quantile(binmix$mu_alpha1, 0.5), # mu_alpha1
+           quantile(glm$mu_alpha1, 0.5), # mu_alpha1
+           quantile(multimix$mu_beta0, 0.5), # mu_beta0
+           quantile(binmix$mu_beta0, 0.5), # mu_beta0
+           quantile(multimix$mu_beta1, 0.5), # mu_beta1
+           quantile(binmix$mu_beta1, 0.5) # mu_beta1
 )
 
 # confidence intervals
-lower_95_eco <- c(fit_summary1$summary[1,4], # mu_alpha0
-                  fit_summary2$summary[1,4], # mu_alpha0
-                  fit_summary3$summary[1,4], # mu_alpha0
-                  fit_summary1$summary[3,4], # mu_alpha1
-                  fit_summary2$summary[3,4], # mu_alpha1
-                  fit_summary3$summary[3,4], # mu_alpha1
-                  fit_summary1$summary[9,4], # mu_beta0
-                  fit_summary2$summary[8,4], # mu_beta0
-                  fit_summary1$summary[11,4], # mu_beta1
-                  fit_summary2$summary[10,4] # mu_beta1
+lower_90_eco <- c(quantile(multimix$mu_alpha0, 0.05), # mu_alpha0
+                  quantile(binmix$mu_alpha0, 0.05), # mu_alpha0
+                  quantile(glm$mu_alpha0, 0.05), # mu_alpha0
+                  quantile(multimix$mu_alpha1, 0.05), # mu_alpha1
+                  quantile(binmix$mu_alpha1, 0.05), # mu_alpha1
+                  quantile(glm$mu_alpha1, 0.05), # mu_alpha1
+                  quantile(multimix$mu_beta0, 0.05), # mu_beta0
+                  quantile(binmix$mu_beta0, 0.05), # mu_beta0
+                  quantile(multimix$mu_beta1, 0.05), # mu_beta1
+                  quantile(binmix$mu_beta1, 0.05) # mu_beta1
 )
 
-upper_95_eco <- c(fit_summary1$summary[1,8], # mu_alpha0
-                  fit_summary2$summary[1,8], # mu_alpha0
-                  fit_summary3$summary[1,8], # mu_alpha0
-                  fit_summary1$summary[3,8], # mu_alpha1
-                  fit_summary2$summary[3,8], # mu_alpha1
-                  fit_summary3$summary[3,8], # mu_alpha1
-                  fit_summary1$summary[9,8], # mu_beta0
-                  fit_summary2$summary[8,8], # mu_beta0
-                  fit_summary1$summary[11,8], # mu_beta1
-                  fit_summary2$summary[10,8] # mu_beta1
+upper_90_eco <- c(quantile(multimix$mu_alpha0, 0.95), # mu_alpha0
+                  quantile(binmix$mu_alpha0, 0.95), # mu_alpha0
+                  quantile(glm$mu_alpha0, 0.95), # mu_alpha0
+                  quantile(multimix$mu_alpha1, 0.95), # mu_alpha1
+                  quantile(binmix$mu_alpha1, 0.95), # mu_alpha1
+                  quantile(glm$mu_alpha1, 0.95), # mu_alpha1
+                  quantile(multimix$mu_beta0, 0.95), # mu_beta0
+                  quantile(binmix$mu_beta0, 0.95), # mu_beta0
+                  quantile(multimix$mu_beta1, 0.95), # mu_beta1
+                  quantile(binmix$mu_beta1, 0.95) # mu_beta1
 )
 
 # confidence intervals
-lower_50_eco <- c(fit_summary1$summary[1,5], # mu_alpha0
-                  fit_summary2$summary[1,5], # mu_alpha0
-                  fit_summary3$summary[1,5], # mu_alpha0
-                  fit_summary1$summary[3,5], # mu_alpha1
-                  fit_summary2$summary[3,5], # mu_alpha1
-                  fit_summary3$summary[3,5], # mu_alpha1
-                  fit_summary1$summary[9,5], # mu_beta0
-                  fit_summary2$summary[8,5], # mu_beta0
-                  fit_summary1$summary[11,5], # mu_beta1
-                  fit_summary2$summary[10,5] # mu_beta1
+lower_50_eco <- c(quantile(multimix$mu_alpha0, 0.25), # mu_alpha0
+                  quantile(binmix$mu_alpha0, 0.25), # mu_alpha0
+                  quantile(glm$mu_alpha0, 0.25), # mu_alpha0
+                  quantile(multimix$mu_alpha1, 0.25), # mu_alpha1
+                  quantile(binmix$mu_alpha1, 0.25), # mu_alpha1
+                  quantile(glm$mu_alpha1, 0.25), # mu_alpha1
+                  quantile(multimix$mu_beta0, 0.25), # mu_beta0
+                  quantile(binmix$mu_beta0, 0.25), # mu_beta0
+                  quantile(multimix$mu_beta1, 0.25), # mu_beta1
+                  quantile(binmix$mu_beta1, 0.25) # mu_beta1
 )
 
-upper_50_eco <- c(fit_summary1$summary[1,7], # mu_alpha0
-                  fit_summary2$summary[1,7], # mu_alpha0
-                  fit_summary3$summary[1,7], # mu_alpha0
-                  fit_summary1$summary[3,7], # mu_alpha1
-                  fit_summary2$summary[3,7], # mu_alpha1
-                  fit_summary3$summary[3,7], # mu_alpha1
-                  fit_summary1$summary[9,7], # mu_beta0
-                  fit_summary2$summary[8,7], # mu_beta0
-                  fit_summary1$summary[11,7], # mu_beta1
-                  fit_summary2$summary[10,7] # mu_beta1
+upper_50_eco <- c(quantile(multimix$mu_alpha0, 0.75), # mu_alpha0
+                  quantile(binmix$mu_alpha0, 0.75), # mu_alpha0
+                  quantile(glm$mu_alpha0, 0.75), # mu_alpha0
+                  quantile(multimix$mu_alpha1, 0.75), # mu_alpha1
+                  quantile(binmix$mu_alpha1, 0.75), # mu_alpha1
+                  quantile(glm$mu_alpha1, 0.75), # mu_alpha1
+                  quantile(multimix$mu_beta0, 0.75), # mu_beta0
+                  quantile(binmix$mu_beta0, 0.75), # mu_beta0
+                  quantile(multimix$mu_beta1, 0.75), # mu_beta1
+                  quantile(binmix$mu_beta1, 0.75) # mu_beta1
 )
 
 
 df_estimates_eco <- as.data.frame(cbind(X_eco, Y_eco, 
-                                        lower_95_eco, upper_95_eco,
+                                        lower_90_eco, upper_90_eco,
                                         lower_50_eco, upper_50_eco))
 
 df_estimates_eco$X_eco <- as.factor(df_estimates_eco$X_eco)
-
-## --------------------------------------------------
-## Get species specific estimates
-
-species_estimates <- data.frame()
-
-first_species_nat_green = 121
-
-for(i in 1:n_species){
-  
-  # row is one before the row of the first species estimate
-  #species_estimates[1,i] <- NA # psi species
-  #species_estimates[1,i] <- fit_summary$summary[23+i,1] # psi species
-  
-  species_estimates[1,i] <- fit_summary$summary[(first_species_nat_green-1)+i,1] # herb shrub forest
-  species_estimates[2,i] <- NA # dev green
-  species_estimates[3,i] <- NA # income
-  species_estimates[4,i] <- NA # race
-  species_estimates[5,i] <- NA # site area
-}
 
 ## --------------------------------------------------
 ## Draw ecological parameter plot
@@ -132,7 +104,7 @@ for(i in 1:n_species){
                              bquote(beta[1])
                     )) +
    scale_y_continuous(str_wrap("Posterior model estimate (logit-scaled)", width = 30),
-                      limits = c(-4, 4)) +
+                      limits = c(-5, 5)) +
    guides(color = guide_legend(title = "")) +
    geom_hline(yintercept = 0, lty = "dashed") +
    theme(legend.text=element_text(size=10),
@@ -145,23 +117,8 @@ for(i in 1:n_species){
    coord_flip()
 )
 
-df_estimates_eco_species <- cbind(df_estimates_eco, species_estimates)
-
-for(i in 1:n_species){
-  
-  test <- as.data.frame(cbind(X_eco, rev(df_estimates_eco_species[,6+i])))
-  #test[1,2] <- NA
-  #test[2,2] <- NA
-  #test[4,2] <- NA
-  colnames(test) <- c("X_eco", "Y_eco")
-  
-  s <- s + geom_point(data = test, aes(x=X_eco, y=Y_eco), 
-                      col = "skyblue", size = 6, shape = "|", alpha = 0.75)
-  
-}
-
 ggplot <- ggplot +
-  geom_errorbar(aes(x=X_eco, ymin=lower_95_eco, ymax=upper_95_eco),
+  geom_errorbar(aes(x=X_eco, ymin=lower_90_eco, ymax=upper_90_eco),
                 color="black",width=0.1,size=1,alpha=0.5) +
   geom_errorbar(aes(x=X_eco, ymin=lower_50_eco, ymax=upper_50_eco),
                 color="black",width=0,size=3,alpha=0.8) +
@@ -181,12 +138,12 @@ temp <- df_estimates_eco[1:3,]
    theme_bw() +
    # scale_color_viridis(discrete=TRUE) +
    scale_x_discrete(name="", breaks = seq(1:3),
-                    labels=c("mrc Nmix",
-                             "binomial Nmix",
+                    labels=c("multimix",
+                             "binmix",
                              "GLM"
                     )) +
    scale_y_continuous(str_wrap("Posterior model estimate (log-scaled)", width = 30),
-                      limits = c(-1, 4)) +
+                      limits = c(-2, 5)) +
    guides(color = guide_legend(title = "")) +
    geom_hline(yintercept = 0, lty = "dashed") +
     ggtitle(bquote(alpha[0])) +
@@ -202,7 +159,7 @@ temp <- df_estimates_eco[1:3,]
 )
 
 p <- p +
-  geom_errorbar(aes(x=X_eco, ymin=lower_95_eco, ymax=upper_95_eco),
+  geom_errorbar(aes(x=X_eco, ymin=lower_90_eco, ymax=upper_90_eco),
                 color="black",width=0.1,size=1,alpha=0.5) +
   geom_errorbar(aes(x=X_eco, ymin=lower_50_eco, ymax=upper_50_eco),
                 color="black",width=0,size=3,alpha=0.8) +
@@ -217,15 +174,15 @@ temp <- df_estimates_eco[4:6,]
     theme_bw() +
     # scale_color_viridis(discrete=TRUE) +
     scale_x_discrete(name="", breaks = (seq(1:3)+3),
-                     labels=c("mrc Nmix",
-                              "binomial Nmix",
+                     labels=c("multimix",
+                              "binmix",
                               "GLM"
                      )) +
     scale_y_continuous(str_wrap("Posterior model estimate (log-scaled)", width = 30),
                        limits = c(-1, 4)) +
     guides(color = guide_legend(title = "")) +
     geom_hline(yintercept = 0, lty = "dashed") +
-    ggtitle(bquote(alpha[1])) +
+    ggtitle(bquote(mu[alpha[4]])) +
     theme(plot.title = element_text(size = 32, face = "bold"),
           legend.text=element_text(size=10),
           axis.text.x = element_text(size = 18),
@@ -238,7 +195,7 @@ temp <- df_estimates_eco[4:6,]
 )
 
 q <- q +
-  geom_errorbar(aes(x=X_eco, ymin=lower_95_eco, ymax=upper_95_eco),
+  geom_errorbar(aes(x=X_eco, ymin=lower_90_eco, ymax=upper_90_eco),
                 color="black",width=0.1,size=1,alpha=0.5) +
   geom_errorbar(aes(x=X_eco, ymin=lower_50_eco, ymax=upper_50_eco),
                 color="black",width=0,size=3,alpha=0.8) +
@@ -253,11 +210,11 @@ temp <- df_estimates_eco[7:8,]
     theme_bw() +
     # scale_color_viridis(discrete=TRUE) +
     scale_x_discrete(name="", breaks = (seq(1:2)+6),
-                     labels=c("mrc Nmix",
-                              "binomial Nmix"
+                     labels=c("multimix",
+                              "binmix"
                      )) +
     scale_y_continuous(str_wrap("Posterior model estimate (logit-scaled)", width = 30),
-                       limits = c(-2.5, 1)) +
+                       limits = c(-4, 1)) +
     guides(color = guide_legend(title = "")) +
     geom_hline(yintercept = 0, lty = "dashed") +
     ggtitle(bquote(beta[0])) +
@@ -273,7 +230,7 @@ temp <- df_estimates_eco[7:8,]
 )
 
 r <- r +
-  geom_errorbar(aes(x=X_eco, ymin=lower_95_eco, ymax=upper_95_eco),
+  geom_errorbar(aes(x=X_eco, ymin=lower_90_eco, ymax=upper_90_eco),
                 color="black",width=0.1,size=1,alpha=0.5) +
   geom_errorbar(aes(x=X_eco, ymin=lower_50_eco, ymax=upper_50_eco),
                 color="black",width=0,size=3,alpha=0.8) +
@@ -288,14 +245,14 @@ temp <- df_estimates_eco[9:10,]
     theme_bw() +
     # scale_color_viridis(discrete=TRUE) +
     scale_x_discrete(name="", breaks = (seq(1:2)+8),
-                     labels=c("mrc Nmix",
-                              "binomial Nmix"
+                     labels=c("multimix",
+                              "binmix"
                      )) +
     scale_y_continuous(str_wrap("Posterior model estimate (logit-scaled)", width = 30),
                        limits = c(-1, 2.5)) +
     guides(color = guide_legend(title = "")) +
     geom_hline(yintercept = 0, lty = "dashed") +
-    ggtitle(bquote(beta[1])) +
+    ggtitle(bquote(mu[beta[3]])) +
     theme(plot.title = element_text(size = 32, face = "bold"),
           legend.text=element_text(size=10),
           axis.text.x = element_text(size = 18),
@@ -308,7 +265,7 @@ temp <- df_estimates_eco[9:10,]
 )
 
 s <- s +
-  geom_errorbar(aes(x=X_eco, ymin=lower_95_eco, ymax=upper_95_eco),
+  geom_errorbar(aes(x=X_eco, ymin=lower_90_eco, ymax=upper_90_eco),
                 color="black",width=0.1,size=1,alpha=0.5) +
   geom_errorbar(aes(x=X_eco, ymin=lower_50_eco, ymax=upper_50_eco),
                 color="black",width=0,size=3,alpha=0.8) +
@@ -316,4 +273,20 @@ s <- s +
              size = 5, alpha = 0.8) 
 s
 
-gridExtra::grid.arrange(p,q,r,s)
+cowplot::plot_grid(p,q,r,s, ncol = 2, 
+                   labels = c('a)', 'b)', 'c)', 'd)'), 
+                   label_size = 20)
+
+## --------------------------------------------------
+## compare overlap between distributions
+
+glm <- as.data.frame(glm) 
+binmix <- as.data.frame(binomial)  
+multimix <- as.data.frame(multinomial) 
+
+quantile(glm$mu_alpha0, c(0.05, 0.5, 0.95))
+
+## is the abundance intercept larger?
+mean(binmix$mu_alpha0 >  glm$mu_alpha0)
+mean(multimix$mu_alpha0 >  glm$mu_alpha0)
+

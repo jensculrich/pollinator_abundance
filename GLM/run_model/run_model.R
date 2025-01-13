@@ -19,12 +19,21 @@ df <- read.csv("./data/abundance_data.csv")
 str(df)
 
 # for now we will filter out the species that we only looked at in one year (A. prunorum)
-df <- filter(df, species != "Andrena prunorum")
+# df <- filter(df, species != "Andrena prunorum")
+df1 <- df %>%
+  filter(year == 1) %>% # add a missing data variable
+  mutate(missing_data = ifelse(species == "Andrena prunorum", 0, 1))
+
+df2 <- df %>%
+  filter(year == 2) %>% # add a missing data variable
+  mutate(missing_data = 1)
+
+df <- rbind(df1, df2)
 
 ## Clean and prep data for model fitting
 # select needed columns
 df <- df %>%
-  dplyr::select(site, treatment, species, year, count)
+  dplyr::select(site, treatment, species, year, count, missing_data)
 
 n_species <- nrow(distinct(df, species)) # number of species
 n_sites <- nrow(distinct(df, site)) # number of sites
@@ -40,15 +49,17 @@ df <- pivot_wider(df, names_from = visit, values_from = count)
 species_names <- as.vector(df$species) # vector of species
 site_names <- as.vector(df$site) # vector of sites
 
-y <- as.matrix(df[,5:7]) # count columns
+y <- as.matrix(df[,6:8]) # count columns
 n_visits <- ncol(y)
 R <- nrow(y)
 X <- as.vector(df$treatment)
 species <- as.integer(as.factor(species_names))
 sites <- as.integer(as.factor(site_names))
-years <- as.vector(df$year)
+year <- as.vector(df$year)
+missing_data <- as.vector(df$missing_data)
 
 names <- rbind("Agapostemon texanus",
+               "Andrena prunorum",
                "Anthidium oblongatum",
                "Bombus flavifrons", 
                "Bombus mixtus", 
@@ -56,7 +67,7 @@ names <- rbind("Agapostemon texanus",
                "Megachile montivaga",
                "Melissodes microsticus")
 
-species_names_table <- as.data.frame(cbind(cbind(1:7), names))
+species_names_table <- as.data.frame(cbind(cbind(1:length(names)), names))
 
 if(use_max_counts == TRUE){
   y_matrix <- y
@@ -76,9 +87,10 @@ stan_data <- c("R",
                "n_sites",
                "species",
                "n_species", 
-               "years",
+               "year",
                "n_visits",
-               "y", "X")
+               "y", "X",
+               "missing_data")
 
 # Parameters monitored
 params <- c(
@@ -86,13 +98,11 @@ params <- c(
   "sigma_alpha0_species",
   "mu_alpha1",
   "sigma_alpha1_species",
-  "mu_alpha2",
-  "sigma_alpha2_species",
+  "alpha2",
   "sigma_alpha3_site",
   "scale_param",
   "alpha0_species",
   "alpha1_species",
-  "alpha2_species",
   "alpha3_site",
   "fit",
   "fit_new",
@@ -122,15 +132,8 @@ inits <- lapply(1:n_chains, function(i)
 )
 
 # Call STAN model from R 
-#stan_model <- "./GLM/models/GLM1_poisson.stan"
-#stan_model <- "./GLM/models/GLM2_negbin.stan"
-
-if(use_max_counts == TRUE){
-  stan_model <- "./GLM/models/GLM4_negbin_w_site_re_max_counts.stan"
-} else {
-  stan_model <- "./GLM/models/GLM3_negbin_w_site_re.stan"
-}
-
+#stan_model <- "./GLM/models/glm_poisson.stan"
+stan_model <- "./GLM/models/glm_negbin_NAs.stan"
 
 ## Call Stan from R
 library(rstan)
@@ -149,7 +152,6 @@ print(stan_out, digits = 3)
 
 traceplot(stan_out, pars = c("mu_alpha0", "sigma_alpha0_species",
                                  "mu_alpha1", "sigma_alpha1_species", 
-                                 "mu_alpha2", "sigma_alpha2_species",
                              "sigma_alpha3_site"))
 
 

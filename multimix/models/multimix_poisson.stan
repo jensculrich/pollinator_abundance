@@ -36,6 +36,8 @@ parameters {
   vector[n_species] beta1_species_raw; // vector of species specific restoration effects
   real<lower=0> sigma_beta1_species; // among species variation in restoration effects
   real beta2; //   effect of year
+  vector[n_sites] beta3_site_raw; // vector of site specific intercept effects
+  real<lower=0> sigma_beta3_site; // among site variation in intercepts
 }
 transformed parameters {
   vector<lower=0, upper=1>[R] p; // site-specific detection, ranges between 0 and 1 
@@ -55,9 +57,11 @@ transformed parameters {
   // non-centered species-specific effects
   vector[n_species] beta0_species;
   vector[n_species] beta1_species;
+  vector[n_sites] beta3_site;
   // implies: xprocess_species ~ normal(mu_xprocess_species, sigma_xprocess_species)
   beta0_species = mu_beta0 + sigma_beta0_species * beta0_species_raw;
   beta1_species = mu_beta1 + sigma_beta1_species * beta1_species_raw;
+  beta3_site = 0 + sigma_beta3_site * beta3_site_raw; // centered on 0 (not adding another intercept)
   
   for (i in 1:R) { // for each site*species combination
     log_lambda[i] = // log abundance is equal to..
@@ -68,7 +72,8 @@ transformed parameters {
     p[i] = inv_logit( // inv logit (detection probability) is equal to..
         beta0_species[species[i]] + // a species specific intercept  
         (beta1_species[species[i]] * X[i]) + // a species specific effect (restoration)
-        (beta2 * year[i])); // an effect (year)
+        (beta2 * year[i])) + // an effect (year)
+        beta3_site[sites[i]]; // site random effect 
   }
   
   for(i in 1:R){ // define site-specific cell probabilities (prob. of capture histories)
@@ -119,6 +124,9 @@ model {
   sigma_beta1_species ~ normal(0, 2);
   // year effects
   beta2 ~ normal(0, 1); // effect of year
+  // site random effect on intercept
+  beta3_site_raw ~ std_normal();
+  sigma_beta3_site ~ normal(0, 1);
   
   // Likelihood
   for (i in 1:R) {

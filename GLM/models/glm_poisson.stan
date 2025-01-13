@@ -2,38 +2,27 @@
 // with species-specific intercepts and slopes
 
 data {
-  
   int<lower=0> R; // Number of observation units (species*sites)
   int<lower=0> n_visits; // Number of repeat visits
-  
   int<lower=0> y[R, n_visits]; // Counts observed on observation 1:R
-  
   vector[R] X; // Habitat covariate (1 = restored or 0 = control)
   vector[R] year; // Year covariate (1 = 2023 or 0 = 2022)
-  
   int<lower=0> n_sites; // Number of sites
   int<lower=1> sites[R]; // vector of sites
-  
   int<lower=0> n_species; // Number of species
   int<lower=1> species[R]; // vector of species
-  
 }
 
 parameters {
-  
   real mu_alpha0; // global interecept for abundance
   vector[n_species] alpha0_species_raw; // species-specific intercepts
-  real<lower=0> sigma_alpha0_species; // among species variation in intercepts
-
+  real<lower=0> sigma_alpha0_species; // among species variation in interceptz
   real mu_alpha1; // community mean effect of restoration
   vector[n_species] alpha1_species_raw; // vector of species specific restoration effects
   real<lower=0> sigma_alpha1_species; // among species variation in restoration effects
-  
   real alpha2; // community mean effect of year
-  
   vector[n_sites] alpha3_site_raw; // vector of site specific intercept effects
   real<lower=0> sigma_alpha3_site; // among site variation in intercepts
-  
   real<lower=0> scale_param;
 }
 
@@ -68,15 +57,12 @@ model {
   mu_alpha0 ~ normal(0, 2); // abundance intercept
   alpha0_species_raw ~ std_normal();
   sigma_alpha0_species ~ normal(0, 2);
-  
   // habitat effects
   mu_alpha1 ~ normal(0, 2); // effect of restoration on abundance 
   alpha1_species_raw ~ std_normal();
   sigma_alpha1_species ~ normal(0, 2);
-  
   // year effects
   alpha2 ~ normal(0, 1); // effect of year
-  
   // site random effect on intercept
   alpha3_site_raw ~ std_normal();
   sigma_alpha3_site ~ normal(0, 1);

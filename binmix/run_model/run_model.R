@@ -23,7 +23,16 @@ df <- df %>%
   ungroup()
 
 # for now we will filter out the species that we only looked at in one year (A. prunorum)
-df <- filter(df, species != "Andrena prunorum")
+#df <- filter(df, species != "Andrena prunorum")
+df1 <- df %>%
+  filter(year == 1) %>% # add a missing data variable
+  mutate(missing_data = ifelse(species == "Andrena prunorum", 0, 1))
+  
+df2 <- df %>%
+  filter(year == 2) %>% # add a missing data variable
+  mutate(missing_data = 1)
+
+df <- rbind(df1, df2)
 
 n_species <- nrow(distinct(df, species)) # number of species
 n_sites <- nrow(distinct(df, site)) # number of sites
@@ -41,12 +50,15 @@ sites <- as.integer(as.factor(site_names))
 year <- as.vector(df$year)
 
 y_max <- apply(y, 1, max)
-K <- ((y_max + 3) * 12)
+K <- ((y_max + 5) * 12)
 View(as.data.frame(cbind(y_max, K)))
 
 n_visits <- ncol(y)
 
+missing_data <- as.vector(df$missing_data)
+
 names <- rbind("Agapostemon texanus",
+               "Andrena prunorum",
                "Anthidium oblongatum",
                "Bombus flavifrons", 
                "Bombus mixtus", 
@@ -54,7 +66,7 @@ names <- rbind("Agapostemon texanus",
                "Megachile montivaga",
                "Melissodes microsticus")
 
-species_names_table <- as.data.frame(cbind(cbind(1:7), names))
+species_names_table <- as.data.frame(cbind(cbind(1:8), names))
 site_names_unique <- unique(site_names)
 factor_sites <- as.integer(as.factor(site_names_unique))
 site_names_table <- as.data.frame(factor_sites, site_names_unique)
@@ -64,6 +76,7 @@ site_names_table <- as.data.frame(factor_sites, site_names_unique)
 ##########################
 
 stan_data <- c("R", "K",
+               "missing_data",
                "sites",
                "n_sites",
                "species",
@@ -98,7 +111,7 @@ params <- c(
 
 
 # MCMC settings
-n_iterations <- 300
+n_iterations <- 4000
 n_thin <- 1
 n_burnin <- 0.5*n_iterations
 n_chains <- 4
@@ -122,7 +135,7 @@ inits <- lapply(1:n_chains, function(i)
 )
 
 # Call STAN model from R 
-stan_model <- "./binmix/models/binmix_negbin.stan"
+stan_model <- "./binmix/models/binmix_negbin_NAs.stan"
 
 ## Call Stan from R
 library(rstan)
@@ -143,8 +156,9 @@ stan_out2 <- readRDS("./model_outputs/real_data/binomial_Nmix.rds")
 print(stan_out, digits = 3)
 
 traceplot(stan_out, pars = c("mu_alpha0", "sigma_alpha0_species",
-                                 "mu_alpha1", "sigma_alpha1_species", 
-                                 "mu_alpha2", "sigma_alpha2_species"))
+                             "mu_alpha1", "sigma_alpha1_species", 
+                             #"mu_alpha2", "sigma_alpha2_species",
+                             "sigma_alpha3_site"))
 
 
 library(bayesplot)

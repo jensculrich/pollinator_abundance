@@ -16,7 +16,7 @@ type <- "multimix"
 type <- "binmix"
 type <- "glm"
 
-n_sims <- 10
+n_sims <- 30
 n_draws_per_sim <- 250
 estimates <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
 precision <- vector(length=n_sims)
@@ -38,7 +38,7 @@ sigma_alpha3_site = 0.5 # among site variation in abundance random effect
 
 mu_beta0 = -2 # detection intercept
 sigma_beta0_species = 0.5 # community variation in detection intercept
-mu_beta1 = 1 # community mean detection response to management
+mu_beta1 = -0.5 # community mean detection response to management
 sigma_beta1_species = 0.5 # community variation in detection response to management
 beta2 = 0 # effect of year on detection rate (i.e., maybe we get better over time)
 

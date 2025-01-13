@@ -4,7 +4,7 @@
 ## hence the options to add species and year effects. Setting the species and year effects
 ## will simulate data for a single species for a singe year across n_sites spatial units.
 
-library(tidyverse) # required for data carpentry
+library(dplyr) # required for data carpentry
 
 ##########################
 ### Simulate data ########
@@ -36,6 +36,8 @@ simulate_data <- function(
     poisson,
     phi
 ){
+  
+  ilogit <- function(x) exp(x)/(1+exp(x))
   
   # number of unique data observation points (observations of unique species at unique site)
   R = n_sites*n_species*n_years
@@ -103,21 +105,18 @@ simulate_data <- function(
   
   theta <- vector(length=R)
   for(i in 1:length(theta)){
-    theta[i] <- theta0 +
-      theta_habitat_effect * X[i]
+    theta[i] <- ilogit(
+      theta0 +
+        theta_habitat_effect * X[i]
+    )
   }
   
   abundance <- vector(length=R)
-  abundance_avail <- matrix(nrow=R, ncol=n_visits)
   if(poisson == TRUE){
     
     for(i in 1:length(lambda)){
       # simulate true abundance
       abundance[i] <- rpois(n = 1, lambda = lambda[i]) 
-      # violate closure assumptions
-      for(j in 1:n_visits){
-        abundance_avail[i, j] <- rbinom(n = 1, size = abundance[i], prob = theta[i])
-      }
     }
     
   } else {
@@ -126,15 +125,13 @@ simulate_data <- function(
     for(i in 1:length(lambda)){
       # simulate true abundance
       abundance[i] <- rnbinom(n = 1, mu = lambda[i], size = phi) 
-      # violate closure assumptions
-      for(j in 1:n_visits){
-        abundance_avail[i, j] <- rbinom(n = 1, size = abundance[i], prob = theta[i])
-      }
     }
     
   }
   
-  df <- as.data.frame(cbind(df, abundance, abundance_avail))
+  
+  
+  df <- as.data.frame(cbind(df, abundance))
   
   # splitting in half allows to add across the two years of data
   totalN1 <- vector(length=n_species) # year 1 abundances
@@ -168,7 +165,7 @@ simulate_data <- function(
                             species_slope_detection_data))
   
   
-  ilogit <- function(x) exp(x)/(1+exp(x))
+  
   # now get a detection rate per species*site*year
   p <- vector(length=R)
   for(i in 1:length(p)){
@@ -180,79 +177,90 @@ simulate_data <- function(
   
   df <- as.data.frame(cbind(df, theta, p))
   
+  # simulate some detection histories
+  det_histories <- matrix(nrow = R, ncol = 8)
+  possible_histories <- as.data.frame(rbind(
+    c('1', '1', '1'),
+    c('1', '1', '0'),
+    c('1', '0', '1'),
+    c('1', '0', '0'),
+    c('0', '1', '1'),
+    c('0', '1', '0'),
+    c('0', '0', '1'),
+    c('0', '0', '0')
+  )) %>%
+    mutate(V1 = as.integer(V1),
+           V2 = as.integer(V2),
+           V3 = as.integer(V3))
+  
+  # matrix of counts (for binmix or glm)
+  y_counts <- matrix(NA, nrow = length(p), ncol = n_visits) # counts
+  # matrix of histories (for multimix)
+  y_histories <- matrix(NA, nrow = length(abundance), ncol = 8) # 8 cols = 8 different possible detection histories 
+  
+  for(r in 1:R){
+    available <- matrix(nrow = df$abundance[r], ncol = n_visits)
+    detected <- matrix(nrow = df$abundance[r], ncol = n_visits)
+    if(length(available) > 0){
+      for(i in 1:nrow(available)){
+        for(j in 1:n_visits){
+          available[i,j] <- rbinom(1, 1, theta[r]) 
+          detected[i,j] = available[i,j] * rbinom(1, 1, p[r]) 
+        }
+      }
+      temp <- as.data.frame(detected) %>%
+        count(V1, V2, V3) %>%
+        full_join(., possible_histories) %>%
+        #mutate(n = replace_na(n, 0)) %>%
+        mutate(history = paste0(V1,V2,V3)) %>%
+        select(history, n) %>%
+        arrange(history, levels = c('000', '001', '010', '011', '100', '101', '110', '111')) %>%
+        arrange(desc(history))
+      
+      temp[is.na(temp)] <- 0
+      
+      y_counts[r, 1:n_visits] = colSums(detected)
+      y_histories[r, 1:8] = temp$n
+    }
+    
+    # when there were zero individuals present at the site, 
+    # the above protocol generates NAs for those y_counts and histories. 
+    # we can just replace na's with zeros since by definition we detect zero of something that's not present
+    y_counts[is.na(y_counts)] <- 0
+    y_histories[is.na(y_histories)] <- 0
+    
+  }
+  
+  # now prep data for model run
   if(type == "multimix"){ # prep data for multinomial Nmix
     
-    # construct cell probs
-    df <- df %>%
-      mutate("p111" = p*p*p, # 111
-             "p110" = p*p*(1-p), # 110
-             "p101" = p*(1-p)*p, # 101
-             "p100" = p*(1-p)*(1-p), # 100
-             "p011" = (1-p)*p*p, # 011
-             "p010" = (1-p)*p*(1-p), # 010
-             "p001" = (1-p)*(1-p)*p, # 001
-             "p000" = (1-p)*(1-p)*(1-p) # 000)
-      )
-    
-    # prob of encounter = probability that the individual is in the survey area (theta)
-    # times the probability of detecting the individual given that it is in the survey area (p)
-    cell_probs = matrix(nrow=nrow(df), ncol=8)
-    for(i in 1:nrow(df)){
-      cell_probs[i,1] = (theta[i]*df$p[i])*(theta[i]*df$p[i])*(theta[i]*df$p[i]) # 111
-      cell_probs[i,2] = (theta[i]*df$p[i])*(theta[i]*df$p[i])*(1-(theta[i]*df$p[i])) # 110
-      cell_probs[i,3] = (theta[i]*df$p[i])*(1-(theta[i]*df$p[i]))*(theta[i]*df$p[i]) # 101
-      cell_probs[i,4] = (theta[i]*df$p[i])*(1-(theta[i]*df$p[i]))*(1-(theta[i]*df$p[i])) # 100
-      cell_probs[i,5] = (1-(theta[i]*df$p[i]))*(theta[i]*df$p[i])*(theta[i]*df$p[i]) # 011
-      cell_probs[i,6] = (1-(theta[i]*df$p[i]))*(theta[i]*df$p[i])*(1-(theta[i]*df$p[i])) # 010
-      cell_probs[i,7] = (1-(theta[i]*df$p[i]))*(1-(theta[i]*df$p[i]))*(theta[i]*df$p[i]) # 001
-      cell_probs[i,8] = (1-(theta[i]*df$p[i]))*(1-(theta[i]*df$p[i]))*(1-(theta[i]*df$p[i])) # 000
-    }
-    
-    # Make a 'census' (i.e., go out and count things)
-    y <- matrix(NA, nrow = length(abundance), ncol = 8) # 8 cols = 8 different possible detection histories 
-    for(i in 1:nrow(y)){
-      
-      # rmultinom(n, size, prob)
-      y[i, 1:8] <- rmultinom(1, size = abundance[i], prob = as.numeric(cell_probs[i, 1:8]))
-      
-    }
-    
-    # we will use a data augmentation approach
-    # we will need to stretch out the encounter frequencies into a row per individual
-    # First, remove the 8th column (not detected individuals, i.e., the data we don't see)
-    y_w_names <- y # save one that has the column names (for readability in the output)
-    
-    y <- y[,-8]
+    y_w_names <- y_histories
+    y <- y_histories[,-8]
     
     # get nobs by species*site*year
     nobs <- apply(y, 1, sum)
     
     # set a ceiling on likelihood search
-    if(mu_beta0 < -1.1){
-      K <- ((nobs + 3) * 10)
+    if(theta0 < 0){
+      K <- ((nobs + 10) * 12)
     } else{
-      K <- ((nobs + 1) * 10)
+      K <- ((nobs + 3) * 10)
     }
     
     colnames(y_w_names) <- c("111", "110", "101","100", "011", "010", "001", "000")
     
   } else if(type == "binmix") { # prep data for binomial Nmix
     
-    # Make a 'census' (i.e., go out and count things)
-    y <- matrix(NA, nrow = length(p), ncol = n_visits) # Array for counts
-    for(i in 1:nrow(y)){
-      for(j in 1:n_visits){
-        y[i,j] <- rbinom(n = 1, size = abundance_avail[i], prob = p[i])
-      }
-    }
+    # use the count data
+    y <- y_counts
     
     # set a ceiling on likelihood search
     y_max <- apply(y, 1, max)
     
-    if(mu_beta0 < -1.1){
-      K <- ((y_max + 3) * 10)
+    if(theta0 < 0){
+      K <- ((y_max + 10) * 12)
     } else{
-      K <- ((y_max + 1) * 10)
+      K <- ((y_max + 3) * 10)
     }
     
     nobs <- NULL
@@ -261,12 +269,7 @@ simulate_data <- function(
   } else { # prep data for GLM
     
     # Make a 'census' (i.e., go out and count things)
-    y <- matrix(NA, nrow = length(p), ncol = n_visits) # Array for counts
-    for(i in 1:nrow(y)){
-      for(j in 1:n_visits){
-        y[i,j] <- rbinom(n = 1, size = abundance_avail[i], prob = p[i])
-      }
-    }
+    y <- y_counts
     
     K <- NULL
     nobs <- NULL

@@ -28,22 +28,27 @@ df <- df %>%
   slice(1) %>%
   ungroup() %>%
   # for now we will filter out the species that we only looked at in one year (A. prunorum)
-  filter(species != "Andrena prunorum")
+  #filter(species != "Andrena prunorum")
+  mutate(missing_data = ifelse(is.na(.[13]), 0, 1)) # add a missing data variable
 
 n_species <- nrow(distinct(df, species)) # number of species
 n_sites <- nrow(distinct(df, site)) # number of sites
 
 R <- nrow(df)
-y <- as.matrix(df[,13:19])
+y <- as.matrix(df[,13:19]) %>%
+  replace_na(-99)
 y_names <- df[,13:19]
 nobs <- apply(y, 1, sum)
 X <- df$treatment
-K <- ((nobs + 3) * 12)
+K <- ((nobs + 5) * 12) %>%
+  replace_na(-99)
+nobs <- nobs %>% replace_na(-99)
 sites <- as.integer(as.factor(df$site))
 site_names <- df$site
 species <- as.integer(as.factor(df$species))
 species_names <- df$species
 year <- df$year
+missing_data <- as.vector(df$missing_data)
 
 species_names_table <- as.data.frame(cbind(cbind(1:n_species), unique(species_names)))
 site_names_unique <- unique(site_names)
@@ -62,7 +67,8 @@ stan_data <- c("R", "K",
                "species",
                "n_species",
                "year",
-               "y")
+               "y",
+               "missing_data")
 
 # Parameters monitored
 params <- c("mu_alpha0",
@@ -89,7 +95,7 @@ params <- c("mu_alpha0",
 
 
 # MCMC settings
-n_iterations <- 300
+n_iterations <- 4000
 n_thin <- 1
 n_burnin <- n_iterations / 2
 n_chains <- 4
@@ -114,7 +120,7 @@ inits <- lapply(1:n_chains, function(i)
 )
 
 # Call STAN model from R 
-stan_model <- "./multimix/models/multimix_negbin.stan"
+stan_model <- "./multimix/models/multimix_negbin_NAs.stan"
 
 ## Call Stan from R
 stan_out <- stan(stan_model,
@@ -133,7 +139,7 @@ print(stan_out, digits = 3)
 
 traceplot(stan_out, pars = c("mu_alpha0", "sigma_alpha0_species",
                                  "mu_alpha1", "sigma_alpha1_species", 
-                                 "mu_alpha2", "sigma_alpha2_species",
+                                 #"mu_alpha2", "sigma_alpha2_species",
                              "sigma_alpha3_site"))
 
 # Evaluation of fit
