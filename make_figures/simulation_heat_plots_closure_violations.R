@@ -4,6 +4,21 @@ library(gridExtra)
 # plot mean estimates for mu_alpha1, with mu_beta1 = 0 versus mu_beta1 = 1 
 # (for each of the three different models)
 
+n_datasets <- 12
+
+list1 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=-1.rds")
+list2 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=0.rds")
+list3 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=1.rds")
+list4 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=0_theta1=-1.rds")
+list5 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=0_theta1=0.rds")
+list6 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=0_theta1=1.rds")
+list7 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=1_theta1=-1.rds")
+list8 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=1_theta1=0.rds")
+list9 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=1_theta1=1.rds")
+list10 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=-1.rds")
+list11 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=0.rds") 
+list12 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=1.rds") 
+
 #-------------------------------------------------------------------------------
 ## binmix
 
@@ -13,26 +28,23 @@ library(gridExtra)
 mu_alpha1 <- 1
 
 # read data
-df1 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=-1_theta1=-1.rds")
-df2 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=-1_theta1=0.rds")
-df3 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=-1_theta1=1.rds")
-df4 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=0_theta1=-1.rds")
-df5 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=0_theta1=0.rds")
-df6 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=0_theta1=1.rds")
-df7 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=1_theta1=-1.rds")
-df8 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=1_theta1=0.rds")
-df9 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=1_theta1=1.rds")
-df10 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=2_theta1=-1.rds")
-df11 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=2_theta1=-1.rds") # readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=2_theta1=0.rds")
-df12 <- readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=2_theta1=-1.rds") # readRDS("./simulation_full/simulation_outputs/closure_violations/estimates/binmix_alpha1=1_theta0=2_theta1=1.rds")
+list_dim <- 1 # which part of the list to access?
+for(i in 1:n_datasets){
+  name = paste0('list', as.character(i))
+  x <- get(name)
+  y <- x[[list_dim]]
+  assign(  paste0("df", i), y)
+  rm(name, x, y); gc()
+}
 
-means <- vector(length=12)
-lower90 <- vector(length=12)
-upper90 <- vector(length=12)
+# now calculate the means and BCI's across the range of sim situations tested
+means <- vector(length=n_datasets)
+lower90 <- vector(length=n_datasets)
+upper90 <- vector(length=n_datasets)
 theta0 <- rep(c(-1, 0, 1, 2), each=3)
 theta1 <- rep(c(-1, 0, 1), times=4)
 
-for(i in 1:12){
+for(i in 1:n_datasets){
   temp <- get(paste0("df", i))
   bias <- temp - mu_alpha1
   means[i] <- mean(bias)
@@ -42,8 +54,9 @@ for(i in 1:12){
 
 df <- as.data.frame(cbind(theta0, theta1, means, lower90, upper90))
 
-df[11:12, 3:5] <- NA
+df[11:12, 3:5] <- NA # add NAs if we don't have all the data yet
 
+# plot the results
 q <- ggplot(data=df, aes(x=theta0, y=theta1)) +
   geom_tile(aes(fill=means)) +
   scale_fill_gradient2(low = "#6bb4ff", mid = "white", high = "#ff6b6b", na.value = NA,
@@ -72,26 +85,23 @@ q
 # precision
 
 # read data
-df1 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=-1_theta1=-1.rds")
-df2 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=-1_theta1=0.rds")
-df3 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=-1_theta1=1.rds")
-df4 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=0_theta1=-1.rds")
-df5 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=0_theta1=0.rds")
-df6 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=0_theta1=1.rds")
-df7 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=1_theta1=-1.rds")
-df8 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=1_theta1=0.rds")
-df9 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=1_theta1=1.rds")
-df10 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=2_theta1=-1.rds")
-df11 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=2_theta1=0.rds")
-df12 <- readRDS("./simulation_full/simulation_outputs/closure_violations/precision/binmix_alpha1=1_theta0=2_theta1=1.rds")
+# read data
+list_dim <- 2 # which part of the list to access?
+for(i in 1:n_datasets){
+  name = paste0('list', as.character(i))
+  x <- get(name)
+  y <- x[[list_dim]]
+  assign(  paste0("df", i), y)
+  rm(name, x, y); gc()
+}
 
-means <- vector(length=12)
-lower90 <- vector(length=12)
-upper90 <- vector(length=12)
+means <- vector(length=n_datasets)
+lower90 <- vector(length=n_datasets)
+upper90 <- vector(length=n_datasets)
 theta0 <- rep(c(-1, 0, 1, 2), each=3)
 theta1 <- rep(c(-1, 0, 1), times=4)
 
-for(i in 1:12){
+for(i in 1:n_datasets){
   temp <- get(paste0("df", i))
   means[i] <- median(temp)
   lower90[i] <- quantile(temp, 0.05)
