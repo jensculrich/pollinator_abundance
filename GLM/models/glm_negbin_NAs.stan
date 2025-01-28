@@ -2,7 +2,6 @@
 // with species-specific intercepts and slopes
 
 data {
-  
   int<lower=0> R; // Number of observation units (species*sites)
   int<lower=0> n_visits; // Number of repeat visits
   int y[R, n_visits]; // Counts observed on observation 1:R
@@ -13,32 +12,22 @@ data {
   int<lower=0> n_species; // Number of species
   int<lower=1> species[R]; // vector of species
   vector[R] missing_data; // vector of NAs (0 = NA, 1 = good data)
-  
 }
-
 parameters {
-  
   real mu_alpha0; // global interecept for abundance
   vector[n_species] alpha0_species_raw; // species-specific intercepts
   real<lower=0> sigma_alpha0_species; // among species variation in intercepts
-
   real mu_alpha1; // community mean effect of restoration
   vector[n_species] alpha1_species_raw; // vector of species specific restoration effects
   real<lower=0> sigma_alpha1_species; // among species variation in restoration effects
-  
   real alpha2; // community mean effect of year
-  
   vector[n_sites] alpha3_site_raw; // vector of site specific intercept effects
   real<lower=0> sigma_alpha3_site; // among site variation in intercepts
-  
   real<lower=0> scale_param;
 }
-
 transformed parameters {
-  
   vector[R] log_mu; // Log population size (mu as the centering parameter
     // for the negative binomial count distribution).
-  
   // non-centered species-specific effects
   vector[n_species] alpha0_species;
   vector[n_species] alpha1_species;

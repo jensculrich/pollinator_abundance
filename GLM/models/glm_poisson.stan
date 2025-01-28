@@ -12,7 +12,6 @@ data {
   int<lower=0> n_species; // Number of species
   int<lower=1> species[R]; // vector of species
 }
-
 parameters {
   real mu_alpha0; // global interecept for abundance
   vector[n_species] alpha0_species_raw; // species-specific intercepts
@@ -25,12 +24,9 @@ parameters {
   real<lower=0> sigma_alpha3_site; // among site variation in intercepts
   real<lower=0> scale_param;
 }
-
 transformed parameters {
-  
   vector[R] log_lambda; // Log population size (mu as the centering parameter
     // for the negative binomial count distribution).
-  
   // non-centered species-specific effects
   vector[n_species] alpha0_species;
   vector[n_species] alpha1_species;
@@ -52,7 +48,6 @@ transformed parameters {
 model {
   
   // Priors
-
   // intercepts
   mu_alpha0 ~ normal(0, 2); // abundance intercept
   alpha0_species_raw ~ std_normal();

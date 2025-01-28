@@ -9,12 +9,22 @@ n_datasets <- 12
 list1 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=-1.rds")
 list2 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=0.rds")
 list3 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=1.rds")
+
+list4 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=1.rds")
+list5 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=1.rds")
+list6 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=1.rds")
+list7 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=1.rds")
+list8 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=1.rds")
+list9 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=-1_theta1=1.rds")
+
+
 list4 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=0_theta1=-1.rds")
 list5 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=0_theta1=0.rds")
 list6 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=0_theta1=1.rds")
 list7 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=1_theta1=-1.rds")
 list8 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=1_theta1=0.rds")
 list9 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=1_theta1=1.rds")
+
 list10 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=-1.rds")
 list11 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=0.rds") 
 list12 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=1.rds") 
@@ -54,7 +64,7 @@ for(i in 1:n_datasets){
 
 df <- as.data.frame(cbind(theta0, theta1, means, lower90, upper90))
 
-df[11:12, 3:5] <- NA # add NAs if we don't have all the data yet
+df[4:9, 3:5] <- NA # add NAs if we don't have all the data yet
 
 # plot the results
 q <- ggplot(data=df, aes(x=theta0, y=theta1)) +
@@ -109,6 +119,8 @@ for(i in 1:n_datasets){
 }
 
 df <- as.data.frame(cbind(theta0, theta1, means, lower90, upper90))
+
+df[4:9, 3:5] <- NA # add NAs if we don't have all the data yet
 
 q2 <- ggplot(data=df, aes(x=theta0, y=theta1)) +
   geom_tile(aes(fill=means)) +

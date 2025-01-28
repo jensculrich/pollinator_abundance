@@ -72,8 +72,8 @@ transformed parameters {
     p[i] = inv_logit( // inv logit (detection probability) is equal to..
         beta0_species[species[i]] + // a species specific intercept  
         (beta1_species[species[i]] * X[i]) + // a species specific effect (restoration)
-        (beta2 * year[i])) + // an effect (year)
-        beta3_site[sites[i]]; // site random effect 
+        (beta2 * year[i]) + // an effect (year)
+        beta3_site[sites[i]]); // site random effect 
   }
   
   for(i in 1:R){ // define site-specific cell probabilities (prob. of capture histories)
