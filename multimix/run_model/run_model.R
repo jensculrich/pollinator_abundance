@@ -83,6 +83,7 @@ params <- c("mu_alpha0",
             "mu_beta1",
             "sigma_beta1_species",
             "beta2",
+            "sigma_beta3_site",
             "alpha0_species",
             "alpha1_species",
             "alpha3_site",
@@ -115,7 +116,8 @@ inits <- lapply(1:n_chains, function(i)
        sigma_beta0_species = runif(1, 0, 1),
        mu_beta1 = runif(1, -1, 1),
        sigma_beta1_species = runif(1, 0, 1),
-       beta2 = runif(1, -0.5, 0.5)
+       beta2 = runif(1, -0.5, 0.5),
+       sigma_beta3_site = runif(1, 0, 1)
   )
 )
 
@@ -137,21 +139,39 @@ stan_out <- stan(stan_model,
 saveRDS(stan_out, "./model_outputs/real_data/multinomial_Nmix.rds")
 print(stan_out, digits = 3)
 
-traceplot(stan_out, pars = c("mu_alpha0", "sigma_alpha0_species",
-                                 "mu_alpha1", "sigma_alpha1_species", 
-                                 #"mu_alpha2", "sigma_alpha2_species",
-                             "sigma_alpha3_site"))
+traceplot(stan_out, pars = c("mu_alpha0",
+                             "sigma_alpha0_species",
+                             "mu_alpha1",
+                             "sigma_alpha1_species",
+                             "alpha2",
+                             "sigma_alpha3_site",
+                             "scale_param",
+                             "mu_beta0",
+                             "sigma_beta0_species",
+                             "mu_beta1",
+                             "sigma_beta1_species",
+                             "beta2",
+                             "sigma_beta3_site"))
+
+pairs(stan_out, pars = c("mu_alpha0",
+                             "sigma_alpha0_species",
+                             "mu_alpha1",
+                             "sigma_alpha1_species",
+                             "alpha2",
+                             "sigma_alpha3_site",
+                             "scale_param"))
 
 # Evaluation of fit
 list_of_draws <- as.data.frame(stan_out)
 plot(list_of_draws$fit, list_of_draws$fit_new, main = "", xlab =
        "Discrepancy actual data", ylab = "Discrepancy replicate data",
      frame.plot = FALSE,
-     ylim = c(000, 75000),
-     xlim = c(000, 75000))
+     ylim = c(000, 150000),
+     xlim = c(000, 150000))
 abline(0, 1, lwd = 2, col = "black")
 
-mean(list_of_draws$fit_new > list_of_draws$fit)
+Bp <- signif(mean(list_of_draws$fit_new > list_of_draws$fit), 4)
+title(paste0("Freeman Tukey P = ", Bp)) 
 mean(list_of_draws$fit) / mean(list_of_draws$fit_new)
 
 

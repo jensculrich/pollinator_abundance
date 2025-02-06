@@ -86,32 +86,32 @@ stan_data <- c("R", "K",
                "y", "X")
 
 # Parameters monitored
-params <- c(
-  "mu_alpha0",
-  "sigma_alpha0_species",
-  "mu_alpha1",
-  "sigma_alpha1_species",
-  "alpha2",
-  "sigma_alpha3_site",
-  "mu_beta0",
-  "sigma_beta0_species",
-  "mu_beta1",
-  "sigma_beta1_species",
-  "beta2",
-  "scale_param",
-  "alpha0_species",
-  "alpha1_species",
-  "alpha3_site",
-  "beta0_species",
-  "beta1_species",
-  "fit",
-  "fit_new",
-  "totalN"
+params <- c("mu_alpha0",
+            "sigma_alpha0_species",
+            "mu_alpha1",
+            "sigma_alpha1_species",
+            "alpha2",
+            "sigma_alpha3_site",
+            "scale_param",
+            "mu_beta0",
+            "sigma_beta0_species",
+            "mu_beta1",
+            "sigma_beta1_species",
+            "beta2",
+            "sigma_beta3_site",
+            "alpha0_species",
+            "alpha1_species",
+            "alpha3_site",
+            "beta0_species",
+            "beta1_species",
+            "fit",
+            "fit_new",
+            "totalN"
 )
 
 
 # MCMC settings
-n_iterations <- 4000
+n_iterations <- 300
 n_thin <- 1
 n_burnin <- 0.5*n_iterations
 n_chains <- 4
@@ -151,14 +151,30 @@ stan_out <- stan(stan_model,
 
 saveRDS(stan_out, "./model_outputs/real_data/binmix.rds")
 
-stan_out1 <- stan_out
-stan_out2 <- readRDS("./model_outputs/real_data/binomial_Nmix.rds")
+stan_out <- readRDS("./model_outputs/real_data/binmix.rds")
 print(stan_out, digits = 3)
 
-traceplot(stan_out, pars = c("mu_alpha0", "sigma_alpha0_species",
-                             "mu_alpha1", "sigma_alpha1_species", 
-                             #"mu_alpha2", "sigma_alpha2_species",
-                             "sigma_alpha3_site"))
+traceplot(stan_out, pars = c("mu_alpha0",
+                             "sigma_alpha0_species",
+                             "mu_alpha1",
+                             "sigma_alpha1_species",
+                             "alpha2",
+                             "sigma_alpha3_site",
+                             "scale_param",
+                             "mu_beta0",
+                             "sigma_beta0_species",
+                             "mu_beta1",
+                             "sigma_beta1_species",
+                             "beta2",
+                             "sigma_beta3_site"))
+
+pairs(stan_out, pars = c("mu_alpha0",
+                         "sigma_alpha0_species",
+                         "mu_alpha1",
+                         "sigma_alpha1_species",
+                         "alpha2",
+                         "sigma_alpha3_site",
+                         "scale_param"))
 
 
 library(bayesplot)
@@ -212,9 +228,12 @@ par(mfrow = c(1, 1))
 plot(list_of_draws$fit, list_of_draws$fit_new, main = "", xlab =
        "Discrepancy actual data", ylab = "Discrepancy replicate data",
      frame.plot = FALSE,
-     ylim = c(000, 50000),
-     xlim = c(000, 50000))
+     ylim = c(000, 20000),
+     xlim = c(000, 20000))
 abline(0, 1, lwd = 2, col = "black")
+
+Bp <- signif(mean(list_of_draws$fit_new > list_of_draws$fit), 4)
+title(paste0("Freeman Tukey P = ", Bp)) 
 
 mean(list_of_draws$fit_new > list_of_draws$fit)
 mean(list_of_draws$fit) / mean(list_of_draws$fit_new)

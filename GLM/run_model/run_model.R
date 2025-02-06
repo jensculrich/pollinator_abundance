@@ -150,9 +150,15 @@ stan_out <- stan(stan_model,
 saveRDS(stan_out, "./model_outputs/real_data/GLM.rds")
 print(stan_out, digits = 3)
 
-traceplot(stan_out, pars = c("mu_alpha0", "sigma_alpha0_species",
-                                 "mu_alpha1", "sigma_alpha1_species", 
-                             "sigma_alpha3_site"))
+stan_out <- readRDS("./model_outputs/real_data/GLM.rds")
+
+traceplot(stan_out, pars = c("mu_alpha0",
+                             "sigma_alpha0_species",
+                             "mu_alpha1",
+                             "sigma_alpha1_species",
+                             "alpha2",
+                             "sigma_alpha3_site",
+                             "scale_param"))
 
 
 library(bayesplot)
@@ -206,9 +212,12 @@ par(mfrow = c(1, 1))
 plot(list_of_draws$fit, list_of_draws$fit_new, main = "", xlab =
        "Discrepancy actual data", ylab = "Discrepancy replicate data",
      frame.plot = FALSE,
-     ylim = c(000, 50000),
-     xlim = c(000, 50000))
+     ylim = c(000, 150000),
+     xlim = c(000, 150000))
 abline(0, 1, lwd = 2, col = "black")
+
+Bp <- signif(mean(list_of_draws$fit_new > list_of_draws$fit), 4)
+title(paste0("Freeman Tukey P = ", Bp)) 
 
 mean(list_of_draws$fit_new > list_of_draws$fit)
 mean(list_of_draws$fit) / mean(list_of_draws$fit_new)

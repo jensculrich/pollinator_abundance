@@ -38,6 +38,7 @@ parameters {
   real<lower=0> sigma_beta1_species; // among species variation in restoration effects
   real beta2; //   effect of year
   real<lower=0> sigma_beta3_site; // among site variation in intercepts
+  vector[n_sites] beta3_site_raw; // among site variation in restoration effects
 }
 transformed parameters {
   vector<lower=0, upper=1>[R] p; // site-specific detection, ranges between 0 and 1 
@@ -185,8 +186,8 @@ generated quantities {
         // (probabilty across visits is fixed) is = expected detection prob * expected abundance
       // Compute fit statistic E_new for real data (y)
       E[i] = square(nobs[i] - eval[i]) / (eval[i] + 0.5);
-      // Generate new replicate data and
-      y_new[i] = binomial_rng(N[i], p_det[i]); // always detect if there
+      // Generate new replicate data 
+      y_new[i] = binomial_rng(N[i], p_det[i]); 
       // Compute fit statistic E_new for replicate data
       E_new[i] = square(y_new[i] - eval[i]) / (eval[i] + 0.5);
     

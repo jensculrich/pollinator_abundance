@@ -76,7 +76,7 @@ transformed parameters {
         beta0_species[species[i]] + // a species specific intercept  
         (beta1_species[species[i]] * X[i]) + // a species specific effect (restoration)
         (beta2 * year[i]) + // an effect (year)
-        beta3_site[site[i]]; // a site specific intercept  
+        beta3_site[sites[i]]; // a site specific intercept  
   }
 }
 
@@ -180,8 +180,8 @@ generated quantities {
         // (probabilty across visits is fixed) is = expected detection prob * expected abundance
       // Compute fit statistic E_new for real data (y)
       E[i,j] = square(y[i,j] - eval[i,j]) / (eval[i,j] + 0.5);
-      // Generate new replicate data and
-      y_new[i,j] = binomial_rng(N[i], p[i]); // always detect if there
+      // Generate new replicate data 
+      y_new[i,j] = binomial_rng(N[i], p[i]); 
       // Compute fit statistic E_new for replicate data
       E_new[i,j] = square(y_new[i,j] - eval[i,j]) / (eval[i,j] + 0.5);
     } // end for j

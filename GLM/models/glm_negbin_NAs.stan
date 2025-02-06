@@ -127,8 +127,8 @@ generated quantities {
           // (probabilty across visits is fixed) is = expected detection prob * expected abundance
         // Compute fit statistic E_new for real data (y)
         E[i,j] = square(y[i,j] - eval[i,j]) / (eval[i,j] + 0.5);
-        // Generate new replicate data and
-        y_new[i,j] = binomial_rng(N[i], 1); // always detect if there
+        // Generate new replicate data 
+        y_new[i,j] = binomial_rng(N[i], 1);
         // Compute fit statistic E_new for replicate data
         E_new[i,j] = square(y_new[i,j] - eval[i,j]) / (eval[i,j] + 0.5);
         
