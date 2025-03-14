@@ -16,14 +16,14 @@ type <- "multimix"
 type <- "binmix"
 type <- "glm"
 
-n_sims <- 30
+n_sims <- 10
 n_draws_per_sim <- 250
 estimates <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
 precision <- vector(length=n_sims)
 
 # define study dimensions and some predictor variable values
 # consider the effect of site covariates on abundance
-n_sites = 20 # number of sites # must be an even number
+n_sites = 10 # number of sites # must be an even number
 n_species = 16 # number of species
 n_visits = 3 # number of repeat visits (= number of temporal reps)
 n_years = 2 # number of years

@@ -129,8 +129,8 @@ model {
       lp[j] = neg_binomial_2_log_lpmf(max_y[i] + j - 1 | log_mu[i], scale_param)
         + binomial_logit_lpmf(y[i] | max_y[i] + j - 1, logit_p[i]); // vectorized over T
       target += log_sum_exp(lp);
-    } // end if
-  } // end for
+    } // end if{}
+  } // end for(i in 1:R){}
 }
 
 generated quantities {

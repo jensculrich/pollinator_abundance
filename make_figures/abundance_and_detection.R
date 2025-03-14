@@ -3,8 +3,8 @@
 library(tidyverse)
 library(rstan)
 
-multimix <- as.data.frame(readRDS("./model_outputs/real_data/multinomial_Nmix.rds"))
-binmix <- as.data.frame(readRDS("./model_outputs/real_data/binomial_Nmix.rds"))
+multimix <- as.data.frame(readRDS("./model_outputs/real_data/multimix.rds"))
+binmix <- as.data.frame(readRDS("./model_outputs/real_data/binmix.rds"))
 glm <- as.data.frame(readRDS("./model_outputs/real_data/GLM.rds"))
 
 n_species <- length(8)
@@ -179,7 +179,7 @@ temp <- df_estimates_eco[4:6,]
                               "GLM"
                      )) +
     scale_y_continuous(str_wrap("Posterior model estimate (log-scaled)", width = 30),
-                       limits = c(-1, 4)) +
+                       limits = c(-1, 3)) +
     guides(color = guide_legend(title = "")) +
     geom_hline(yintercept = 0, lty = "dashed") +
     ggtitle(bquote(mu[alpha[4]])) +
@@ -249,10 +249,10 @@ temp <- df_estimates_eco[9:10,]
                               "binmix"
                      )) +
     scale_y_continuous(str_wrap("Posterior model estimate (logit-scaled)", width = 30),
-                       limits = c(-1, 2.5)) +
+                       limits = c(-1, 2)) +
     guides(color = guide_legend(title = "")) +
     geom_hline(yintercept = 0, lty = "dashed") +
-    ggtitle(bquote(mu[beta[3]])) +
+    ggtitle(bquote(mu[beta[4]])) +
     theme(plot.title = element_text(size = 32, face = "bold"),
           legend.text=element_text(size=10),
           axis.text.x = element_text(size = 18),
@@ -281,12 +281,20 @@ cowplot::plot_grid(p,q,r,s, ncol = 2,
 ## compare overlap between distributions
 
 glm <- as.data.frame(glm) 
-binmix <- as.data.frame(binomial)  
-multimix <- as.data.frame(multinomial) 
+binmix <- as.data.frame(binmix)  
+multimix <- as.data.frame(multimix) 
 
-quantile(glm$mu_alpha0, c(0.05, 0.5, 0.95))
+quantile(binmix$mu_beta1, c(0.25, 0.5, 0.75))
 
-## is the abundance intercept larger?
-mean(binmix$mu_alpha0 >  glm$mu_alpha0)
-mean(multimix$mu_alpha0 >  glm$mu_alpha0)
+SS## is estimate larger?
+mean(binmix$mu_alpha1 > glm$mu_alpha1)
+mean(multimix$mu_alpha1 > glm$mu_alpha1)
 
+ilogit <- function(x) exp(x)/(1+exp(x))
+quantile(multimix$mu_beta1, c(0.05, 0.5, 0.95))
+quantile(multimix$mu_beta0, c(0.05, 0.5, 0.95))
+detection_restored <- multimix$mu_beta0 + multimix$mu_beta1
+ilogit(quantile(detection_restored, c(0.05, 0.5, 0.95)))
+ilogit(quantile(multimix$mu_beta0, c(0.05, 0.5, 0.95)))
+
+mean(detection_restored > multimix$mu_beta0)

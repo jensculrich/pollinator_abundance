@@ -160,6 +160,14 @@ traceplot(stan_out, pars = c("mu_alpha0",
                              "sigma_alpha3_site",
                              "scale_param"))
 
+pairs(stan_out, pars = c("mu_alpha0",
+                         "sigma_alpha0_species",
+                         "mu_alpha1",
+                         "sigma_alpha1_species",
+                         "alpha2",
+                         "sigma_alpha3_site",
+                         "scale_param"))
+
 
 library(bayesplot)
 library(tidyverse)

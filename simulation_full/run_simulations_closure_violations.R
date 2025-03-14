@@ -42,7 +42,7 @@ sigma_alpha3_site = 0.5 # among site variation in abundance random effect
 # lower values mean that individuals in some true population have some probability < 1
 # of being available for detection in the plot during the survey date.
 # do these on the logit scale
-theta0 = 2 # in the range of...  -1, 0, 1, 2
+theta0 = -1 # in the range of...  -1, 0, 1, 2
 theta_habitat_effect = 1 # in the range of... -2,-1, 0, 1, 2
 
 mu_beta0 = -2 # detection intercept

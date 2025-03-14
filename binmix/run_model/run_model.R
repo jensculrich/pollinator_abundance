@@ -39,7 +39,7 @@ n_sites <- nrow(distinct(df, site)) # number of sites
 
 df <- pivot_wider(df, names_from = visit, values_from = count)
 
-y <- as.matrix(df[,5:7])
+y <- as.matrix(df[,6:8])
 X <- as.vector(df$treatment)
 R <- nrow(y)
 
@@ -98,7 +98,7 @@ params <- c("mu_alpha0",
             "mu_beta1",
             "sigma_beta1_species",
             "beta2",
-            "sigma_beta3_site",
+            #"sigma_beta3_site",
             "alpha0_species",
             "alpha1_species",
             "alpha3_site",
@@ -136,6 +136,7 @@ inits <- lapply(1:n_chains, function(i)
 
 # Call STAN model from R 
 stan_model <- "./binmix/models/binmix_negbin_NAs.stan"
+#stan_model <- "./binmix/models/binmix_negbin.stan"
 
 ## Call Stan from R
 library(rstan)
@@ -151,7 +152,7 @@ stan_out <- stan(stan_model,
 
 saveRDS(stan_out, "./model_outputs/real_data/binmix.rds")
 
-stan_out <- readRDS("./model_outputs/real_data/binmix.rds")
+#stan_out <- readRDS("./model_outputs/real_data/binmix.rds")
 print(stan_out, digits = 3)
 
 traceplot(stan_out, pars = c("mu_alpha0",
@@ -228,8 +229,8 @@ par(mfrow = c(1, 1))
 plot(list_of_draws$fit, list_of_draws$fit_new, main = "", xlab =
        "Discrepancy actual data", ylab = "Discrepancy replicate data",
      frame.plot = FALSE,
-     ylim = c(000, 20000),
-     xlim = c(000, 20000))
+     ylim = c(000, 75000),
+     xlim = c(000, 75000))
 abline(0, 1, lwd = 2, col = "black")
 
 Bp <- signif(mean(list_of_draws$fit_new > list_of_draws$fit), 4)
