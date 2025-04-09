@@ -76,7 +76,7 @@ transformed parameters {
         beta0_species[species[i]] + // a species specific intercept  
         (beta1_species[species[i]] * X[i]) + // a species specific effect (restoration)
         (beta2 * year[i]) + // an effect (year)
-        beta3_site[site[i]]
+        beta3_site[sites[i]]
       ;
   }
 }

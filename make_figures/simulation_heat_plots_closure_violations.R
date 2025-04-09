@@ -4,7 +4,7 @@ library(gridExtra)
 # plot mean estimates for mu_alpha1, with mu_beta1 = 0 versus mu_beta1 = 1 
 # (for each of the three different models)
 
-n_datasets <- 12
+n_datasets <- 9
 
 #-------------------------------------------------------------------------------
 ## binmix
@@ -19,9 +19,9 @@ list6 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix
 list7 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=1_theta1=-1.rds")
 list8 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=1_theta1=0.rds")
 list9 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=1_theta1=1.rds")
-list10 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=-1.rds")
-list11 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=0.rds") 
-list12 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=1.rds") 
+#list10 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=-1.rds")
+#list11 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=0.rds") 
+#list12 <- readRDS("./simulation_full/simulation_outputs/closure_violations/binmix_alpha1=1_theta0=2_theta1=1.rds") 
 
 #-------------------------------------------------------------------------------
 # bias abundance covariate
@@ -43,8 +43,8 @@ for(i in 1:n_datasets){
 means <- vector(length=n_datasets)
 lower90 <- vector(length=n_datasets)
 upper90 <- vector(length=n_datasets)
-theta0 <- rep(c(-1, 0, 1, 2), each=3)
-theta1 <- rep(c(-1, 0, 1), times=4)
+theta0 <- rep(c(-1, 0, 1), each=3)
+theta1 <- rep(c(-1, 0, 1), times=3)
 
 for(i in 1:n_datasets){
   temp <- get(paste0("df", i))
@@ -103,8 +103,8 @@ for(i in 1:n_datasets){
 means <- vector(length=n_datasets)
 lower90 <- vector(length=n_datasets)
 upper90 <- vector(length=n_datasets)
-theta0 <- rep(c(-1, 0, 1, 2), each=3)
-theta1 <- rep(c(-1, 0, 1), times=4)
+theta0 <- rep(c(-1, 0, 1), each=3)
+theta1 <- rep(c(-1, 0, 1), times=3)
 
 for(i in 1:n_datasets){
   temp <- get(paste0("df", i))
@@ -209,7 +209,7 @@ grid.arrange(q, q2, q3, ncol = 2)
 ## multimix
 
 # read data
-list1 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=-1_theta1=-1.rds")
+list1 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=-1_theta1=-1_copy.rds")
 list2 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=-1_theta1=0.rds")
 list3 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=-1_theta1=1.rds")
 list4 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=0_theta1=-1.rds")
@@ -218,9 +218,9 @@ list6 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multim
 list7 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=1_theta1=-1.rds")
 list8 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=1_theta1=0.rds")
 list9 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=1_theta1=1.rds")
-list10 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=2_theta1=-1.rds")
-list11 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=2_theta1=0.rds") 
-list12 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=2_theta1=1.rds") 
+#list10 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=2_theta1=-1.rds")
+#list11 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=2_theta1=0.rds") 
+#list12 <- readRDS("./simulation_full/simulation_outputs/closure_violations/multimix_alpha1=1_theta0=2_theta1=1.rds") 
 
 #-------------------------------------------------------------------------------
 # bias abundance covariate
@@ -242,8 +242,8 @@ for(i in 1:n_datasets){
 means <- vector(length=n_datasets)
 lower90 <- vector(length=n_datasets)
 upper90 <- vector(length=n_datasets)
-theta0 <- rep(c(-1, 0, 1, 2), each=3)
-theta1 <- rep(c(-1, 0, 1), times=4)
+theta0 <- rep(c(-1, 0, 1), each=3)
+theta1 <- rep(c(-1, 0, 1), times=3)
 
 for(i in 1:n_datasets){
   temp <- get(paste0("df", i))
@@ -255,10 +255,10 @@ for(i in 1:n_datasets){
 
 df <- as.data.frame(cbind(theta0, theta1, means, lower90, upper90))
 
-#df[4:9, 3:5] <- NA # add NAs if we don't have all the data yet
+#df[6:12, 3:5] <- NA # add NAs if we don't have all the data yet
 
 # plot the results
-q <- ggplot(data=df, aes(x=theta0, y=theta1)) +
+r <- ggplot(data=df, aes(x=theta0, y=theta1)) +
   geom_tile(aes(fill=means)) +
   scale_fill_gradient2(low = "#6bb4ff", mid = "white", high = "#ff6b6b", na.value = NA,
                        breaks=c(-1,0,1,2), limits = c(-1.5, 1.5)) +
@@ -274,6 +274,7 @@ q <- ggplot(data=df, aes(x=theta0, y=theta1)) +
   xlab(bquote(theta[0])) +
   ylab(bquote(theta[1])) +
   theme_classic() +
+  ggtitle("abundance covariate bias (multimix)") +
   theme(axis.title.x = element_text(size=18),
         axis.title.y = element_text(size=18),
         axis.text.x = element_text(size=14),
@@ -281,7 +282,7 @@ q <- ggplot(data=df, aes(x=theta0, y=theta1)) +
         legend.text = element_text(size=14),
         legend.title = element_text(size=14, face="bold"),
         plot.title = element_text(face="bold", size=20)) 
-q
+r
 
 #-------------------------------------------------------------------------------
 # total abundance
@@ -303,8 +304,8 @@ for(i in 1:n_datasets){
 means <- vector(length=n_datasets)
 lower90 <- vector(length=n_datasets)
 upper90 <- vector(length=n_datasets)
-theta0 <- rep(c(-1, 0, 1, 2), each=3)
-theta1 <- rep(c(-1, 0, 1), times=4)
+theta0 <- rep(c(-1, 0, 1), each=3)
+theta1 <- rep(c(-1, 0, 1), times=3)
 
 for(i in 1:n_datasets){
   temp <- get(paste0("df", i))
@@ -316,8 +317,9 @@ for(i in 1:n_datasets){
 
 df <- as.data.frame(cbind(theta0, theta1, means, lower90, upper90))
 
+#df[6:12, 3:5] <- NA # add NAs if we don't have all the data yet
 
-q2 <- ggplot(data=df, aes(x=theta0, y=theta1)) +
+r2 <- ggplot(data=df, aes(x=theta0, y=theta1)) +
   geom_tile(aes(fill=means)) +
   scale_fill_gradient2(low = "#6bb4ff", mid = "white", high = "#ff6b6b", na.value = NA,
                        breaks=c(-1,0,1,2), limits = c(-1.5, 1.5)) +
@@ -333,6 +335,7 @@ q2 <- ggplot(data=df, aes(x=theta0, y=theta1)) +
   xlab(bquote(theta[0])) +
   ylab(bquote(theta[1])) +
   theme_classic() +
+  ggtitle("abundance intercept bias (multimix)") +
   theme(axis.title.x = element_text(size=18),
         axis.title.y = element_text(size=18),
         axis.text.x = element_text(size=14),
@@ -340,7 +343,7 @@ q2 <- ggplot(data=df, aes(x=theta0, y=theta1)) +
         legend.text = element_text(size=14),
         legend.title = element_text(size=14, face="bold"),
         plot.title = element_text(face="bold", size=20)) 
-q2
+r2
 
 #-------------------------------------------------------------------------------
 # detection rate
@@ -375,8 +378,9 @@ for(i in 1:n_datasets){
 
 df <- as.data.frame(cbind(theta0, theta1, means, lower90, upper90))
 
+df[6:12, 3:5] <- NA # add NAs if we don't have all the data yet
 
-q3 <- ggplot(data=df, aes(x=theta0, y=theta1)) +
+r3 <- ggplot(data=df, aes(x=theta0, y=theta1)) +
   geom_tile(aes(fill=means)) +
   scale_fill_gradient2(low = "#6bb4ff", mid = "white", high = "#ff6b6b", na.value = NA,
                        breaks=c(-1,0,1,2), limits = c(-1.5, 1.5)) +
@@ -399,13 +403,15 @@ q3 <- ggplot(data=df, aes(x=theta0, y=theta1)) +
         legend.text = element_text(size=14),
         legend.title = element_text(size=14, face="bold"),
         plot.title = element_text(face="bold", size=20)) 
-q3
+r3
 
-grid.arrange(q, q2, q3, ncol = 2)
+grid.arrange(r, r2, r3, ncol = 2)
 #-------------------------------------------------------------------------------
 ## plot all
 
-cowplot::plot_grid(q2, q, ncol=2,
-             labels = c("a)", "b)"),
+cowplot::plot_grid(q2, q, 
+                   r2, r,
+                   ncol=2,
+             labels = c("a)", "b)", "c)", "d)"),
              label_size = 20)
 

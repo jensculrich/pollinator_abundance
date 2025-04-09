@@ -15,12 +15,12 @@ library(rstan) # required to fit stan model
 type <- "multimix"
 type <- "binmix"
 
-n_sims <- 20
+n_sims <- 10
 n_draws_per_sim <- 250
-mu_alpha1 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
+estimates_mu_alpha1 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
 precision_mu_alpha1 <- vector(length=n_sims)
-mu_alpha0 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
-mu_beta0 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
+estimates_mu_alpha0 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
+estimates_mu_beta0 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
 
 # define study dimensions and some predictor variable values
 # consider the effect of site covariates on abundance
@@ -43,7 +43,7 @@ sigma_alpha3_site = 0.5 # among site variation in abundance random effect
 # of being available for detection in the plot during the survey date.
 # do these on the logit scale
 theta0 = -1 # in the range of...  -1, 0, 1, 2
-theta_habitat_effect = 1 # in the range of... -2,-1, 0, 1, 2
+theta_habitat_effect = 1 # in the range of... -1, 0, 1,
 
 mu_beta0 = -2 # detection intercept
 sigma_beta0_species = 0.5 # community variation in detection intercept
@@ -159,6 +159,7 @@ for(i in 1:n_sims){
            sigma_beta3_site = runif(1, 0, 1)
       )
     )
+    
     
     # Call STAN model from R 
     stan_model <- "./multimix/models/multimix_poisson.stan"
@@ -277,22 +278,23 @@ for(i in 1:n_sims){
   # capture the mean estimate
   #fit_summary <- rstan::summary(stan_out_sim)
   list_of_draws_mu_alpha1 <- as.data.frame(stan_out_sim)[,3]
-  mu_alpha1[i, 1:n_draws_per_sim] <- sample(list_of_draws_mu_alpha1, size = n_draws_per_sim)
+  estimates_mu_alpha1[i, 1:n_draws_per_sim] <- sample(list_of_draws_mu_alpha1, size = n_draws_per_sim)
   
   quantiles <- quantile(list_of_draws_mu_alpha1, c(0.05, 0.95))
   precision_mu_alpha1[i] <- quantiles[2] - quantiles[1]
   
   list_of_draws_mu_alpha0 <- as.data.frame(stan_out_sim)[,1]
-  mu_alpha0[i, 1:n_draws_per_sim] <- sample(list_of_draws, size = n_draws_per_sim)
+  estimates_mu_alpha0[i, 1:n_draws_per_sim] <- sample(list_of_draws_mu_alpha0, size = n_draws_per_sim)
   
-  list_of_draws_mu_beta0 <- as.data.frame(stan_out_sim)[,8]
-  mu_beta0[i, 1:n_draws_per_sim] <- sample(list_of_draws, size = n_draws_per_sim)
+  list_of_draws_mu_beta0 <- as.data.frame(stan_out_sim)[,7]
+  estimates_mu_beta0[i, 1:n_draws_per_sim] <- sample(list_of_draws_mu_beta0, size = n_draws_per_sim)
   
   print(i)
   
 }
 
-temp_list <- list(mu_alpha1, precision_mu_alpha1, mu_alpha0, mu_beta0)
+temp_list <- list(estimates_mu_alpha1, precision_mu_alpha1, 
+                  estimates_mu_alpha0, estimates_mu_beta0)
 
 # save outputs
 saveRDS(temp_list, paste0(

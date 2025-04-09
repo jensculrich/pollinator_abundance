@@ -240,11 +240,22 @@ simulate_data <- function(
     # get nobs by species*site*year
     nobs <- apply(y, 1, sum)
     
-    # set a ceiling on likelihood search
-    if(theta0 < 0){
-      K <- ((nobs + 10) * 12)
-    } else{
-      K <- ((nobs + 3) * 10)
+    if(type == "binmix"){
+      # set a ceiling on likelihood search
+      if(theta0 < 0.1){
+        K <- ((nobs + 15) * 12)
+      } else {
+        K <- ((nobs + 5) * 10)
+      }
+    }
+    
+    if(type == "multimix"){
+      # set a ceiling on likelihood search
+      if(theta0 < 0.1){
+        K <- ((nobs + 15) * 12)
+      } else{
+        K <- ((nobs + 5) * 10)
+      }
     }
     
     colnames(y_w_names) <- c("111", "110", "101","100", "011", "010", "001", "000")

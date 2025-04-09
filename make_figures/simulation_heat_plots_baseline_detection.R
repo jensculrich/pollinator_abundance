@@ -396,3 +396,116 @@ cowplot::plot_grid(p, p2, q, q2, r, r2, ncol=2,
              labels = c("a)", "b)", "c)","d)", "e)", "f)"),
              label_size = 20)
 
+
+
+
+
+
+
+#-------------------------------------------------------------------------------
+## glm without labels (for presentation)
+
+# bias
+
+# get real value of effect
+mu_alpha1 <- 1
+
+# read data
+df1 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=0_beta1=0.rds")
+df2 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=0_beta1=0.5.rds")
+df3 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=0_beta1=1.rds")
+df4 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-1_beta1=0.rds")
+df5 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-1_beta1=0.5.rds")
+df6 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-1_beta1=1.rds")
+df7 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=0.rds")
+df8 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=0.5.rds")
+df9 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=1.rds")
+df10 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-3_beta1=0.rds")
+df11 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-3_beta1=0.5.rds")
+df12 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-3_beta1=1.rds")
+
+means <- vector(length=12)
+lower90 <- vector(length=12)
+upper90 <- vector(length=12)
+beta0 <- rep(c(0, -1, -2, -3), each=3)
+beta1 <- rep(c(0, 0.5, 1), times=4)
+
+for(i in 1:12){
+  temp <- get(paste0("df", i))
+  bias <- temp - mu_alpha1
+  means[i] <- mean(bias)
+  lower90[i] <- quantile(bias, 0.05)
+  upper90[i] <- quantile(bias, 0.95)
+}
+
+df <- as.data.frame(cbind(beta0, beta1, means, lower90, upper90))
+
+p_intercept <- ggplot(data=df, aes(x=beta0, y=beta1)) +
+  geom_tile(aes(fill=means)) +
+  scale_fill_gradient2(low = "#6bb4ff", mid = "white", high = "#ff6b6b", na.value = NA,
+                       breaks=c(-1,-0.5,0,0.5,1), limits = c(0, 1)) +
+  labs(fill="bias") +
+  xlab("Baseline detection rate (logit-scaled)") +
+  ylab("Effect of habitat on\ndetection (logit-scaled)") +
+  theme_classic() +
+  theme(axis.title.x = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        axis.text.x = element_text(size=14),
+        axis.text.y = element_text(size=14),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=14, face="bold"),
+        plot.title = element_text(face="bold", size=20)) 
+p_intercept
+
+#-------------------------------------------------------------------------------
+## glm
+
+
+# get real value of effect
+mu_alpha1 <- 1
+
+# read data
+df1 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=0_nsites=10.rds")
+df2 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=0.5_nsites=10.rds")
+df3 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=1_nsites=10.rds")
+df4 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=0.rds")
+df5 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=0.5.rds")
+df6 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=1.rds")
+df7 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=0_nsites=30.rds")
+df8 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=0.5_nsites=30.rds")
+df9 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=1_nsites=30.rds")
+
+means <- vector(length=9)
+lower90 <- vector(length=9)
+upper90 <- vector(length=9)
+n_sites <- rep(c(10, 20, 30), each=3)
+beta1 <- rep(c(0, 0.5, 1), times=3)
+
+for(i in 1:9){
+  temp <- get(paste0("df", i))
+  bias <- temp - mu_alpha1
+  means[i] <- mean(bias)
+  lower90[i] <- quantile(bias, 0.05)
+  upper90[i] <- quantile(bias, 0.95)
+}
+
+df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
+
+p_sites <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
+  geom_tile(aes(fill=means)) +
+  scale_fill_gradient2(low = "#6bb4ff", mid = "white", high = "#ff6b6b", na.value = NA,
+                       breaks=c(-1,-0.5,0,0.5,1), limits = c(0, 1)) +
+  labs(fill="bias") +
+  xlab("n sites") +
+  ylab("Effect of habitat on\ndetection (logit-scaled)") +
+  theme_classic() +
+  theme(axis.title.x = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        axis.text.x = element_text(size=14),
+        axis.text.y = element_text(size=14),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=14, face="bold"),
+        plot.title = element_text(face="bold", size=20)) 
+p_sites
+
+cowplot::plot_grid(p_intercept, p_sites, ncol=2)
