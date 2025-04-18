@@ -12,26 +12,42 @@ library(gridExtra)
 mu_alpha1 <- 1
 
 # read data
-df1 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=-0.5_nsites=10.rds")
-df2 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=0_nsites=10.rds")
-df3 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=0.5_nsites=10.rds")
-df4 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=1_nsites=10.rds")
-df5 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=-0.5.rds")
-df6 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=0.rds")
-df7 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=0.5.rds")
-df8 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=1.rds")
-df9 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=-0.5_nsites=30.rds")
-df10 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=0_nsites=30.rds")
-df11 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=0.5_nsites=30.rds")
-df12 <- readRDS("./simulation_full/simulation_outputs/n_sites/estimates/glm_alpha1=1_beta0=-2_beta1=1_nsites=30.rds")
+list1 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=-0.5_nsites=10.rds")
+list2 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=0_nsites=10.rds")
+list3 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=0.5_nsites=10.rds")
+list4 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=1_nsites=10.rds")
+list5 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-2_beta1=-0.5.rds")
+list6 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-2_beta1=0.rds")
+list7 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-2_beta1=0.5.rds")
+list8 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-2_beta1=1.rds")
+list9 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=-0.5_nsites=30.rds")
+list10 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=0_nsites=30.rds")
+list11 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=0.5_nsites=30.rds")
+list12 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=1_nsites=30.rds")
+list13 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=-0.5_nsites=40.rds")
+list14 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=0_nsites=40.rds")
+list15 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=0.5_nsites=40.rds")
+list16 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=1_nsites=40.rds")
 
-means <- vector(length=12)
-lower90 <- vector(length=12)
-upper90 <- vector(length=12)
-n_sites <- rep(c(10, 20, 30), each=4)
-beta1 <- rep(c(-0.5, 0, 0.5, 1), times=3)
+# read data
+n_datasets <- 16
+list_dim <- 1 # which part of the list to access?
+for(i in 1:n_datasets){
+  name = paste0('list', as.character(i))
+  x <- get(name)
+  y <- x[[list_dim]]
+  assign(  paste0("df", i), y)
+  rm(name, x, y); gc()
+}
 
-for(i in 1:12){
+# now calculate the means and BCI's across the range of sim situations tested
+means <- vector(length=n_datasets)
+lower90 <- vector(length=n_datasets)
+upper90 <- vector(length=n_datasets)
+n_sites <- rep(c(10, 20, 30, 40), each=4)
+beta1 <- rep(c(-0.5, 0, 0.5, 1), times=4)
+
+for(i in 1:n_datasets){
   temp <- get(paste0("df", i))
   bias <- temp - mu_alpha1
   means[i] <- mean(bias)

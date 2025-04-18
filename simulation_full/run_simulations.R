@@ -16,7 +16,7 @@ type <- "multimix"
 type <- "binmix"
 type <- "glm"
 
-n_sims <- 20
+n_sims <- 50
 n_draws_per_sim <- 250
 estimates_mu_alpha1 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
 precision_mu_alpha1 <- vector(length=n_sims)
@@ -25,7 +25,7 @@ estimates_mu_beta0 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
 
 # define study dimensions and some predictor variable values
 # consider the effect of site covariates on abundance
-n_sites = 20 # number of sites # must be an even number
+n_sites = 40 # number of sites # must be an even number
 n_species = 16 # number of species
 n_visits = 3 # number of repeat visits (= number of temporal reps)
 n_years = 2 # number of years
@@ -38,9 +38,9 @@ mu_alpha2 = 0 # community mean in abundance response to year (only two years so 
 sigma_alpha2_species = 0 # community variation in abundance response to year
 sigma_alpha3_site = 0.5 # among site variation in abundance random effect
 
-mu_beta0 = 0 # detection intercept
+mu_beta0 = -2 # detection intercept
 sigma_beta0_species = 0 # community variation in detection intercept
-mu_beta1 = -0.5 # community mean detection response to management
+mu_beta1 = 1 # community mean detection response to management
 sigma_beta1_species = 0.5 # community variation in detection response to management
 beta2 = 0 # effect of year on detection rate (i.e., maybe we get better over time)
 
@@ -222,7 +222,7 @@ for(i in 1:n_sims){
                 "mu_alpha1",
                 "sigma_alpha1_species",
                 "sigma_alpha3_site",
-                "scale_param",
+                #"scale_param",
                 "fit",
                 "fit_new",
                 "totalN"
@@ -285,15 +285,6 @@ for(i in 1:n_sims){
 temp_list <- list(estimates_mu_alpha1, precision_mu_alpha1, 
                   estimates_mu_alpha0, estimates_mu_beta0)
 
-# save outputs (for varying detection intercept)
-saveRDS(temp_list, paste0(
-  "./simulation_full/simulation_outputs/baseline_detection/",
-  type, 
-  "_alpha1=", mu_alpha1,
-  "_beta0=", mu_beta0, 
-  "_beta1=", mu_beta1, 
-  ".rds"))
-
 # OR save outputs (for varying n_sites)
 saveRDS(temp_list, paste0(
   "./simulation_full/simulation_outputs/n_sites/",
@@ -303,4 +294,15 @@ saveRDS(temp_list, paste0(
   "_beta1=", mu_beta1, 
   "_nsites=", n_sites,
   ".rds"))
+
+
+# save outputs (for varying detection intercept)
+saveRDS(temp_list, paste0(
+  "./simulation_full/simulation_outputs/baseline_detection/",
+  type, 
+  "_alpha1=", mu_alpha1,
+  "_beta0=", mu_beta0, 
+  "_beta1=", mu_beta1, 
+  ".rds"))
+
 

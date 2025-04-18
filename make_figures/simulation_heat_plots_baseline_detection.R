@@ -13,36 +13,49 @@ library(gridExtra)
 mu_alpha1 <- 1
 
 # read data
-df1 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=0_beta1=-0.5.rds")
-df2 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=0_beta1=0.rds")
-df3 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=0_beta1=0.5.rds")
-df4 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=0_beta1=1.rds")
-df5 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-1_beta1=-0.5.rds")
-df6 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-1_beta1=0.rds")
-df7 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-1_beta1=0.5.rds")
-df8 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-1_beta1=1.rds")
-df9 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=-0.5.rds")
-df10 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=0.rds")
-df11 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=0.5.rds")
-df12 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-2_beta1=1.rds")
-df13 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-3_beta1=-0.5.rds")
-df14 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-3_beta1=0.rds")
-df15 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-3_beta1=0.5.rds")
-df16 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/estimates/glm_alpha1=1_beta0=-3_beta1=1.rds")
+list1 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=0_beta1=-0.5.rds")
+list2 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=0_beta1=0.rds")
+list3 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=0_beta1=0.5.rds")
+list4 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=0_beta1=1.rds")
+list5 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-1_beta1=-0.5.rds")
+list6 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-1_beta1=0.rds")
+list7 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-1_beta1=0.5.rds")
+list8 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-1_beta1=1.rds")
+list9 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-2_beta1=-0.5.rds")
+list10 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-2_beta1=0.rds")
+list11 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-2_beta1=0.5.rds")
+list12 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-2_beta1=1.rds")
+list13 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-3_beta1=-0.5.rds")
+list14 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-3_beta1=0.rds")
+list15 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-3_beta1=0.5.rds")
+list16 <- readRDS("./simulation_full/simulation_outputs/baseline_detection/glm_alpha1=1_beta0=-3_beta1=1.rds")
 
-means <- vector(length=16)
-lower90 <- vector(length=16)
-upper90 <- vector(length=16)
-beta0 <- rep(c(0, -1, -2, -3), each=4)
+# read data
+n_datasets <- 16
+list_dim <- 1 # which part of the list to access?
+for(i in 1:n_datasets){
+  name = paste0('list', as.character(i))
+  x <- get(name)
+  y <- x[[list_dim]]
+  assign(  paste0("df", i), y)
+  rm(name, x, y); gc()
+}
+
+# now calculate the means and BCI's across the range of sim situations tested
+means <- vector(length=n_datasets)
+lower90 <- vector(length=n_datasets)
+upper90 <- vector(length=n_datasets)
+beta0 <- rep(c(-3, -2, -1, 0), each=4)
 beta1 <- rep(c(-0.5, 0, 0.5, 1), times=4)
 
-for(i in 1:16){
+for(i in 1:n_datasets){
   temp <- get(paste0("df", i))
   bias <- temp - mu_alpha1
   means[i] <- mean(bias)
   lower90[i] <- quantile(bias, 0.05)
   upper90[i] <- quantile(bias, 0.95)
 }
+
 
 df <- as.data.frame(cbind(beta0, beta1, means, lower90, upper90))
 
