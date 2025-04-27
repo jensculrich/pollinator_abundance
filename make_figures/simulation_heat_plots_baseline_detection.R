@@ -249,7 +249,7 @@ df <- as.data.frame(cbind(beta0, beta1, means, lower90, upper90))
 
 q2 <- ggplot(data=df, aes(x=beta0, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient(low = "#fbf3ff", high = "#b595c5", na.value = NA,
+  scale_fill_gradient(low = "ivory", high = "ivory3", na.value = NA,
                       breaks=c(0,1,2), limits = c(0, 2)) +
   labs(fill="precision") +
   geom_text(data = df, 
@@ -258,7 +258,7 @@ q2 <- ggplot(data=df, aes(x=beta0, y=beta1)) +
               "[", signif(lower90,2), ", ", signif(upper90,2), "]")),
             vjust = 1.5, size = 4.5) +
   geom_text(data = df, 
-            aes(x = beta0, y = beta1, label = signif(means,4)),
+            aes(x = beta0, y = beta1, label = signif(means,2)),
             vjust = -1.5, size = 4.5) +
   xlab("Baseline detection rate (logit-scaled)") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
@@ -378,7 +378,7 @@ df <- as.data.frame(cbind(beta0, beta1, means, lower90, upper90))
 
 r2 <- ggplot(data=df, aes(x=beta0, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient(low = "#fbf3ff", high = "#b595c5", na.value = NA,
+  scale_fill_gradient(low = "ivory", high = "ivory3", na.value = NA,
                       breaks=c(0,1,2), limits = c(0, 2)) +
   labs(fill="precision") +
   geom_text(data = df, 
@@ -387,7 +387,7 @@ r2 <- ggplot(data=df, aes(x=beta0, y=beta1)) +
               "[", signif(lower90,2), ", ", signif(upper90,2), "]")),
             vjust = 1.5, size = 4.5) +
   geom_text(data = df, 
-            aes(x = beta0, y = beta1, label = signif(means,4)),
+            aes(x = beta0, y = beta1, label = signif(means,2)),
             vjust = -1.5, size = 4.5) +
   xlab("Baseline detection rate (logit-scaled)") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
@@ -409,9 +409,9 @@ cowplot::plot_grid(p, p2, q, q2, r, r2, ncol=2,
              labels = c("a)", "b)", "c)","d)", "e)", "f)"),
              label_size = 20)
 
-
-
-
+cowplot::plot_grid(q, q2, r, r2, ncol=2,
+                   labels = c("a)", "b)", "c)","d)"),
+                   label_size = 20)
 
 
 

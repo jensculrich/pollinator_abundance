@@ -30,7 +30,7 @@ list15 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_bet
 list16 <- readRDS("./simulation_full/simulation_outputs/n_sites/glm_alpha1=1_beta0=-2_beta1=1_nsites=40.rds")
 
 # read data
-n_datasets <- 16
+n_datasets <- 12
 list_dim <- 1 # which part of the list to access?
 for(i in 1:n_datasets){
   name = paste0('list', as.character(i))
@@ -44,8 +44,8 @@ for(i in 1:n_datasets){
 means <- vector(length=n_datasets)
 lower90 <- vector(length=n_datasets)
 upper90 <- vector(length=n_datasets)
-n_sites <- rep(c(10, 20, 30, 40), each=4)
-beta1 <- rep(c(-0.5, 0, 0.5, 1), times=4)
+n_sites <- rep(c(10, 20, 30), each=4)
+beta1 <- rep(c(-0.5, 0, 0.5, 1), times=3)
 
 for(i in 1:n_datasets){
   temp <- get(paste0("df", i))
@@ -235,7 +235,7 @@ df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
 
 q2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient(low = "#fbf3ff", high = "#b595c5", na.value = NA,
+  scale_fill_gradient(low = "ivory", high = "ivory3", na.value = NA,
                       breaks=c(0,1,2), limits = c(0, 2)) +
   labs(fill="precision") +
   geom_text(data = df, 
@@ -244,7 +244,7 @@ q2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
               "[", signif(lower90,2), ", ", signif(upper90,2), "]")),
             vjust = 1.5, size = 4.5) +
   geom_text(data = df, 
-            aes(x = n_sites, y = beta1, label = signif(means,4)),
+            aes(x = n_sites, y = beta1, label = signif(means,2)),
             vjust = -1.5, size = 4.5) +
   xlab("n sites") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
@@ -356,7 +356,7 @@ df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
 
 r2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
   geom_tile(aes(fill=means)) +
-  scale_fill_gradient(low = "#fbf3ff", high = "#b595c5", na.value = NA,
+  scale_fill_gradient(low = "ivory", high = "ivory3", na.value = NA,
                       breaks=c(0,1,2), limits = c(0, 2)) +
   labs(fill="precision") +
   geom_text(data = df, 
@@ -365,7 +365,7 @@ r2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
               "[", signif(lower90,2), ", ", signif(upper90,2), "]")),
             vjust = 1.5, size = 4.5) +
   geom_text(data = df, 
-            aes(x = n_sites, y = beta1, label = signif(means,4)),
+            aes(x = n_sites, y = beta1, label = signif(means,2)),
             vjust = -1.5, size = 4.5) +
   xlab("n sites") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
@@ -387,3 +387,6 @@ cowplot::plot_grid(p, p2, q, q2, r, r2, ncol=2,
              labels = c("a)", "b)", "c)","d)", "e)", "f)"),
              label_size = 20)
 
+cowplot::plot_grid(q, q2, r, r2, ncol=2,
+                   labels = c("a)", "b)", "c)","d)"),
+                   label_size = 20)
