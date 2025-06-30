@@ -87,45 +87,54 @@ p
 
 # precision
 
-list_dim <- 2 # which part of the list to access?
-for(i in 1:n_datasets){
-  name = paste0('list', as.character(i))
-  x <- get(name)
-  y <- x[[list_dim]]
-  assign(  paste0("df", i), y)
-  rm(name, x, y); gc()
-}
+# old way for original submission to JAE
+#list_dim <- 2 # which part of the list to access?
+#or(i in 1:n_datasets){
+#  name = paste0('list', as.character(i))
+#  x <- get(name)
+#  y <- x[[list_dim]]
+#  assign(  paste0("df", i), y)
+#  rm(name, x, y); gc()
+#}
 
 # now calculate the means and BCI's across the range of sim situations tested
-means <- vector(length=n_datasets)
-lower90 <- vector(length=n_datasets)
-upper90 <- vector(length=n_datasets)
+#means <- vector(length=n_datasets)
+#lower90 <- vector(length=n_datasets)
+#upper90 <- vector(length=n_datasets)
+#beta0 <- rep(c(0, -1, -2, -3), each=4)
+#beta1 <- rep(c(-0.5, 0, 0.5, 1), times=4)
+
+#for(i in 1:n_datasets){
+#  precision <- get(paste0("df", i))
+#  means[i] <- mean(precision)
+#  lower90[i] <- quantile(precision, 0.05)
+#  upper90[i] <- quantile(precision, 0.95)
+#}
+
+#df <- as.data.frame(cbind(beta0, beta1, means, lower90, upper90))
+
+# now calculate the means and BCI's across the range of sim situations tested
+variance <- vector(length=n_datasets)
+precision <- vector(length=n_datasets)
 beta0 <- rep(c(0, -1, -2, -3), each=4)
 beta1 <- rep(c(-0.5, 0, 0.5, 1), times=4)
 
 for(i in 1:n_datasets){
-  precision <- get(paste0("df", i))
-  means[i] <- mean(precision)
-  lower90[i] <- quantile(precision, 0.05)
-  upper90[i] <- quantile(precision, 0.95)
+  temp <- get(paste0("df", i))
+  variance[i] <- sd(as.vector(temp))
+  precision[i] <- 1 / variance[i]
 }
 
-
-df <- as.data.frame(cbind(beta0, beta1, means, lower90, upper90))
+df <- as.data.frame(cbind(beta0, beta1, variance, precision))
 
 p2 <- ggplot(data=df, aes(x=beta0, y=beta1)) +
-  geom_tile(aes(fill=means)) +
-  scale_fill_gradient(low = "ivory", high = "ivory3",, na.value = NA,
-                      breaks=c(0,1), limits = c(0.5, 1.25)) +
+  geom_tile(aes(fill=precision)) +
+  scale_fill_gradient(low = "ivory", high = "ivory3", na.value = NA,
+                      breaks=c(1,2,3), limits = c(1, 3)) +
   labs(fill="precision") +
   geom_text(data = df, 
-            aes(x = beta0, y = beta1, label = paste0(
-              #"90% BCI: [", signif(lower90,2), ", ", signif(upper90,2), "]")),
-              "[", signif(lower90,2), ", ", signif(upper90,2), "]")),
-            vjust = 1.5, size = 4.5) +
-  geom_text(data = df, 
-            aes(x = beta0, y = beta1, label = signif(means,2)),
-            vjust = -1.5, size = 4.5) +
+            aes(x = beta0, y = beta1, label = signif(precision,2)),
+            vjust = 0, size = 4.5) +
   xlab("Baseline detection rate (logit-scaled)") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
@@ -216,45 +225,28 @@ q
 
 # precision
 
-list_dim <- 2 # which part of the list to access?
-for(i in 1:n_datasets){
-  name = paste0('list', as.character(i))
-  x <- get(name)
-  y <- x[[list_dim]]
-  assign(  paste0("df", i), y)
-  rm(name, x, y); gc()
-}
-
 # now calculate the means and BCI's across the range of sim situations tested
-means <- vector(length=n_datasets)
-lower90 <- vector(length=n_datasets)
-upper90 <- vector(length=n_datasets)
+variance <- vector(length=n_datasets)
+precision <- vector(length=n_datasets)
 n_sites <- rep(c(10, 20, 30), each=4)
 beta1 <- rep(c(-0.5, 0, 0.5, 1), times=3)
 
 for(i in 1:n_datasets){
-  precision <- get(paste0("df", i))
-  means[i] <- mean(precision)
-  lower90[i] <- quantile(precision, 0.05)
-  upper90[i] <- quantile(precision, 0.95)
+  temp <- get(paste0("df", i))
+  variance[i] <- sd(as.vector(temp))
+  precision[i] <- 1 / variance[i]
 }
 
-
-df <- as.data.frame(cbind(n_sites, beta1, means, lower90, upper90))
+df <- as.data.frame(cbind(n_sites, beta1, variance, precision))
 
 q2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
-  geom_tile(aes(fill=means)) +
+  geom_tile(aes(fill=precision)) +
   scale_fill_gradient(low = "ivory", high = "ivory3", na.value = NA,
-                      breaks=c(0.5,1), limits = c(0.5, 1.25)) +
+                      breaks=c(1,2,3), limits = c(1, 3)) +
   labs(fill="precision") +
   geom_text(data = df, 
-            aes(x = n_sites, y = beta1, label = paste0(
-              #"90% BCI: [", signif(lower90,2), ", ", signif(upper90,2), "]")),
-              "[", signif(lower90,2), ", ", signif(upper90,2), "]")),
-            vjust = 1.5, size = 4.5) +
-  geom_text(data = df, 
-            aes(x = n_sites, y = beta1, label = signif(means,2)),
-            vjust = -1.5, size = 4.5) +
+            aes(x = n_sites, y = beta1, label = signif(precision,2)),
+            vjust = 0, size = 4.5) +
   xlab("n sites") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
@@ -265,7 +257,6 @@ q2 <- ggplot(data=df, aes(x=n_sites, y=beta1)) +
         legend.text = element_text(size=14),
         legend.title = element_text(size=14, face="bold"))
 q2
-
 
 #-------------------------------------------------------------------------------
 # plot grid
