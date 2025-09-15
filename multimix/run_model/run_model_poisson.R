@@ -1,5 +1,4 @@
 # fit the Nmix model to my real data
-# load required libraries
 library(tidyverse)
 library(rstan)
 
@@ -10,16 +9,15 @@ library(rstan)
 # analysis of real data ############
 ####################################
 
-# read abundance data
 df <- read.csv("./data/abundance_data.csv")
 str(df)
 
 df <- df %>%
-  # calculate number of individuals with each observable encounter history (by species*site*year group)
+  # calculate number in each observable cell (by species*site*year group)
   group_by(year, site, species) %>%
   mutate(
     "111" = obs_round_1_and_2_double_recaptures[3],
-    "110" = obs_round_1_recaptures[2] - obs_round_1_and_2_double_recaptures[3],
+    "110" = obs_round_1_recaptures[2] - obs_round_1_and_2_double_recaptures[3], # not right
     "101" = obs_round_1_recaptures[3],
     "100" = count[1] - obs_round_1_recaptures[3] - obs_round_1_and_2_double_recaptures[3] 
       - (obs_round_1_and_2_double_recaptures[3] - obs_round_1_recaptures[2]), 
@@ -29,28 +27,29 @@ df <- df %>%
     ) %>%
   slice(1) %>%
   ungroup() %>%
+  # for now we will filter out the species that we only looked at in one year (A. prunorum)
+  filter(species != "Andrena prunorum") %>%
   mutate(missing_data = ifelse(is.na(.[13]), 0, 1)) # add a missing data variable
 
 n_species <- nrow(distinct(df, species)) # number of species
 n_sites <- nrow(distinct(df, site)) # number of sites
 
-R <- nrow(df) # number of observation events
-y <- as.matrix(df[,13:19]) %>%
-  replace_na(-99) # give stan some numeric value (it will be treated as an NA)
-y_names <- df[,13:19] # encounter history names
-nobs <- apply(y, 1, sum) # total number of observed individuals at each site/species/year
-X <- df$treatment # 0 = control; 1 = restored
-K <- ((nobs + 5) * 12) %>% # search possible abundance up to K = ...
-  replace_na(-99) # give stan some numeric value (it will be treated as an NA)
-nobs <- nobs %>% replace_na(-99)# give stan some numeric value (it will be treated as an NA)
-sites <- as.integer(as.factor(df$site)) # unique integer values to represent site names
-site_names <- df$site # real site names (character version)
-species <- as.integer(as.factor(df$species)) # unique integer values to represent species names
-species_names <- df$species # real species names (character version)
-year <- df$year # year 0 = 2022; 1 = 2023
-missing_data <- as.vector(df$missing_data) # vector indicating whether the row should be treated as NA 
+R <- nrow(df)
+y <- as.matrix(df[,13:19]) 
+#%>% replace_na(-99)
+y_names <- df[,13:19]
+nobs <- apply(y, 1, sum)
+X <- df$treatment
+K <- ((nobs + 5) * 12) %>%
+  replace_na(-99)
+nobs <- nobs %>% replace_na(-99)
+sites <- as.integer(as.factor(df$site))
+site_names <- df$site
+species <- as.integer(as.factor(df$species))
+species_names <- df$species
+year <- df$year
+missing_data <- as.vector(df$missing_data)
 
-# keep track of integer / character name conversions
 species_names_table <- as.data.frame(cbind(cbind(1:n_species), unique(species_names)))
 site_names_unique <- unique(site_names)
 site_names_table <- as.data.frame(cbind(cbind(1:n_sites), unique(site_names)))
@@ -60,7 +59,6 @@ site_names_table <- as.data.frame(cbind(cbind(1:n_sites), unique(site_names)))
 ### Run model ############
 ##########################
 
-# pack some data for Stan
 stan_data <- c("R", "K", 
                "nobs",
                "X",
@@ -69,8 +67,7 @@ stan_data <- c("R", "K",
                "species",
                "n_species",
                "year",
-               "y",
-               "missing_data")
+               "y")
 
 # Parameters monitored
 params <- c("mu_alpha0",
@@ -98,7 +95,7 @@ params <- c("mu_alpha0",
 
 
 # MCMC settings
-n_iterations <- 4000
+n_iterations <- 2000
 n_thin <- 1
 n_burnin <- n_iterations / 2
 n_chains <- 4
@@ -124,7 +121,7 @@ inits <- lapply(1:n_chains, function(i)
 )
 
 # Call STAN model from R 
-stan_model <- "./multimix/models/multimix_negbin_NAs.stan"
+stan_model <- "./multimix/models/multimix_poisson.stan"
 
 ## Call Stan from R
 stan_out <- stan(stan_model,
@@ -138,8 +135,7 @@ stan_out <- stan(stan_model,
                      open_progress = FALSE,
                      cores = n_cores)
 
-# Save and view model outputs
-saveRDS(stan_out, "./model_outputs/real_data/multinomial_Nmix.rds")
+saveRDS(stan_out, "./model_outputs/real_data/multinomial_Nmix_poisson.rds")
 print(stan_out, digits = 3)
 
 traceplot(stan_out, pars = c("mu_alpha0",
@@ -169,15 +165,15 @@ list_of_draws <- as.data.frame(stan_out)
 plot(list_of_draws$fit, list_of_draws$fit_new, main = "", xlab =
        "Discrepancy actual data", ylab = "Discrepancy replicate data",
      frame.plot = FALSE,
-     ylim = c(000, 150000),
-     xlim = c(000, 150000))
+     ylim = c(000, 3000),
+     xlim = c(000, 3000))
 abline(0, 1, lwd = 2, col = "black")
 
 Bp <- signif(mean(list_of_draws$fit_new > list_of_draws$fit), 4)
 title(paste0("Freeman Tukey P = ", Bp)) 
 mean(list_of_draws$fit) / mean(list_of_draws$fit_new)
 
-# some summary views of the param estimates
+
 library(bayesplot)
 library(tidyverse)
 

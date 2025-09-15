@@ -45,7 +45,7 @@ for(i in 1:n_datasets){
 means <- vector(length=n_datasets)
 lower90 <- vector(length=n_datasets)
 upper90 <- vector(length=n_datasets)
-beta0 <- rep(c(-3, -2, -1, 0), each=4)
+beta0 <- rep(c(0, -1, -2, -3), each=4)
 beta1 <- rep(c(-0.5, 0, 0.5, 1), times=4)
 
 for(i in 1:n_datasets){
@@ -72,7 +72,7 @@ p <- ggplot(data=df, aes(x=beta0, y=beta1)) +
   geom_text(data = df, 
             aes(x = beta0, y = beta1, label = signif(means,2)),
             vjust = -1.5, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
+  xlab("") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
@@ -102,13 +102,13 @@ df <- as.data.frame(cbind(beta0, beta1, variance, precision))
 p2 <- ggplot(data=df, aes(x=beta0, y=beta1)) +
   geom_tile(aes(fill=precision)) +
   scale_fill_gradient(low = "ivory", high = "ivory3", na.value = NA,
-                      breaks=c(1,2,3), limits = c(1, 3)) +
+                      breaks=c(1,2,3), limits = c(1, 3.2)) +
   labs(fill="precision") +
   geom_text(data = df, 
             aes(x = beta0, y = beta1, label = signif(precision,2)),
             vjust = 0, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
-  ylab("Effect of habitat on\ndetection (logit-scaled)") +
+  xlab("") +
+  ylab("\n") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
         axis.title.y = element_text(size=16),
@@ -186,7 +186,7 @@ q <- ggplot(data=df, aes(x=beta0, y=beta1)) +
   geom_text(data = df, 
             aes(x = beta0, y = beta1, label = signif(means,2)),
             vjust = -1.5, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
+  xlab("") +
   ylab("Effect of habitat on\ndetection (logit-scaled)") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
@@ -227,13 +227,13 @@ df <- as.data.frame(cbind(beta0, beta1, variance, precision))
 q2 <- ggplot(data=df, aes(x=beta0, y=beta1)) +
   geom_tile(aes(fill=precision)) +
   scale_fill_gradient(low = "ivory", high = "ivory3", na.value = NA,
-                      breaks=c(1,2,3), limits = c(1, 3)) +
+                      breaks=c(1,2,3), limits = c(1, 3.2)) +
   labs(fill="precision") +
   geom_text(data = df, 
             aes(x = beta0, y = beta1, label = signif(precision,2)),
             vjust = 0, size = 4.5) +
-  xlab("Baseline detection rate (logit-scaled)") +
-  ylab("Effect of habitat on\ndetection (logit-scaled)") +
+  xlab("") +
+  ylab("\n") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
         axis.title.y = element_text(size=16),
@@ -334,13 +334,13 @@ df <- as.data.frame(cbind(beta0, beta1, variance, precision))
 r2 <- ggplot(data=df, aes(x=beta0, y=beta1)) +
   geom_tile(aes(fill=precision)) +
   scale_fill_gradient(low = "ivory", high = "ivory3", na.value = NA,
-                      breaks=c(1,2,3), limits = c(1, 3)) +
+                      breaks=c(1,2,3), limits = c(1, 3.2)) +
   labs(fill="precision") +
   geom_text(data = df, 
             aes(x = beta0, y = beta1, label = signif(precision,2)),
             vjust = 0, size = 4.5) +
   xlab("Baseline detection rate (logit-scaled)") +
-  ylab("Effect of habitat on\ndetection (logit-scaled)") +
+  ylab("\n") +
   theme_classic() +
   theme(axis.title.x = element_text(size=16),
         axis.title.y = element_text(size=16),

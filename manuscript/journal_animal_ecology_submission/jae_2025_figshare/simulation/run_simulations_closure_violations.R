@@ -14,9 +14,8 @@ library(rstan) # required to fit stan model
 # type: choose 1 of 3 options
 type <- "multimix"
 type <- "binmix"
-type <- "glm"
 
-n_sims <- 20
+n_sims <- 10
 n_draws_per_sim <- 250
 estimates_mu_alpha1 <- matrix(nrow=n_sims, ncol=n_draws_per_sim)
 precision_mu_alpha1 <- vector(length=n_sims)
@@ -30,7 +29,7 @@ n_species = 16 # number of species
 n_visits = 3 # number of repeat visits (= number of temporal reps)
 n_years = 2 # number of years
 
-mu_alpha0 = 2 # abundance intercept
+mu_alpha0 = 3 # abundance intercept
 sigma_alpha0_species = 0.5 # community variation in abundance intercept
 mu_alpha1 = 1 # community mean abundance response to management
 sigma_alpha1_species = 0.5 # community variation in abundance response to management
@@ -38,9 +37,17 @@ mu_alpha2 = 0 # community mean in abundance response to year (only two years so 
 sigma_alpha2_species = 0 # community variation in abundance response to year
 sigma_alpha3_site = 0.5 # among site variation in abundance random effect
 
+# violate abundance closure assumptions?
+# set theta == 1 to perfectly satisfy closure assumptions.
+# lower values mean that individuals in some true population have some probability < 1
+# of being available for detection in the plot during the survey date.
+# do these on the logit scale
+theta0 = -1 # in the range of...  -1, 0, 1, 2
+theta_habitat_effect = 1 # in the range of... -1, 0, 1,
+
 mu_beta0 = -2 # detection intercept
-sigma_beta0_species = 0 # community variation in detection intercept
-mu_beta1 = -0.5 # community mean detection response to management
+sigma_beta0_species = 0.5 # community variation in detection intercept
+mu_beta1 = 0 # community mean detection response to management
 sigma_beta1_species = 0.5 # community variation in detection response to management
 beta2 = 0 # effect of year on detection rate (i.e., maybe we get better over time)
 
@@ -51,7 +58,7 @@ phi = 0.7 #if using a negative binomial distribution, how much dispersion to use
 seed <- seq(1:n_sims)
 
 # now start the simulation
-source("./simulation_full/simulate_function.R")
+source("./simulation_full/simulate_function_closure_violations.R")
 
 for(i in 1:n_sims){
   
@@ -67,6 +74,9 @@ for(i in 1:n_sims){
                                      mu_alpha2, 
                                      sigma_alpha2_species, 
                                      sigma_alpha3_site, 
+                                     
+                                     theta0,
+                                     theta_habitat_effect,
                                      
                                      mu_beta0,
                                      sigma_beta0_species, 
@@ -97,8 +107,8 @@ for(i in 1:n_sims){
   n_iterations <- 300
   n_thin <- 1
   n_burnin <- n_iterations / 2
-  n_chains <- 4
-  n_cores <- 4
+  n_chains <- 6
+  n_cores <- n_chains
   
   if(type == "multimix"){ # prep stan for multinomial nmix
     
@@ -125,6 +135,7 @@ for(i in 1:n_sims){
                 "mu_beta1",
                 "sigma_beta1_species",
                 "beta2",
+                "sigma_beta3_site",
                 "fit",
                 "fit_new",
                 "totalN"
@@ -144,9 +155,11 @@ for(i in 1:n_sims){
            sigma_beta0_species = runif(1, 0, 1),
            mu_beta1 = runif(1, -1, 1),
            sigma_beta1_species = runif(1, 0, 1),
-           beta2 = runif(1, -0.5, 0.5)
+           beta2 = runif(1, -0.5, 0.5),
+           sigma_beta3_site = runif(1, 0, 1)
       )
     )
+    
     
     # Call STAN model from R 
     stan_model <- "./multimix/models/multimix_poisson.stan"
@@ -177,6 +190,7 @@ for(i in 1:n_sims){
                 "mu_beta1",
                 "sigma_beta1_species",
                 "beta2",
+                "sigma_beta3_site",
                 "fit",
                 "fit_new",
                 "totalN"
@@ -196,7 +210,8 @@ for(i in 1:n_sims){
            sigma_beta0_species = runif(1, 0, 1),
            mu_beta1 = runif(1, -1, 1),
            sigma_beta1_species = runif(1, 0, 1),
-           beta2 = runif(1, -0.5, 0.5)
+           beta2 = runif(1, -0.5, 0.5),
+           sigma_beta3_site = runif(1, 0, 1)
       )
     )
     
@@ -222,7 +237,7 @@ for(i in 1:n_sims){
                 "mu_alpha1",
                 "sigma_alpha1_species",
                 "sigma_alpha3_site",
-                #"scale_param",
+                "scale_param",
                 "fit",
                 "fit_new",
                 "totalN"
@@ -262,19 +277,15 @@ for(i in 1:n_sims){
   
   # capture the mean estimate
   #fit_summary <- rstan::summary(stan_out_sim)
-  # estimates for the covariate effect size
   list_of_draws_mu_alpha1 <- as.data.frame(stan_out_sim)[,3]
   estimates_mu_alpha1[i, 1:n_draws_per_sim] <- sample(list_of_draws_mu_alpha1, size = n_draws_per_sim)
   
-  # precision for the covariate effect size
   quantiles <- quantile(list_of_draws_mu_alpha1, c(0.05, 0.95))
   precision_mu_alpha1[i] <- quantiles[2] - quantiles[1]
   
-  # estimates for abundance intercept
   list_of_draws_mu_alpha0 <- as.data.frame(stan_out_sim)[,1]
   estimates_mu_alpha0[i, 1:n_draws_per_sim] <- sample(list_of_draws_mu_alpha0, size = n_draws_per_sim)
   
-  # estimates for detection intercept
   list_of_draws_mu_beta0 <- as.data.frame(stan_out_sim)[,7]
   estimates_mu_beta0[i, 1:n_draws_per_sim] <- sample(list_of_draws_mu_beta0, size = n_draws_per_sim)
   
@@ -285,24 +296,11 @@ for(i in 1:n_sims){
 temp_list <- list(estimates_mu_alpha1, precision_mu_alpha1, 
                   estimates_mu_alpha0, estimates_mu_beta0)
 
-# OR save outputs (for varying n_sites)
+# save outputs
 saveRDS(temp_list, paste0(
-  "./simulation_full/simulation_outputs/n_sites/",
+  "./simulation_full/simulation_outputs/closure_violations/",
   type, 
   "_alpha1=", mu_alpha1,
-  "_beta0=", mu_beta0, 
-  "_beta1=", mu_beta1, 
-  "_nsites=", n_sites,
+  "_theta0=", theta0, 
+  "_theta1=", theta_habitat_effect, 
   ".rds"))
-
-
-# save outputs (for varying detection intercept)
-saveRDS(temp_list, paste0(
-  "./simulation_full/simulation_outputs/baseline_detection/",
-  type, 
-  "_alpha1=", mu_alpha1,
-  "_beta0=", mu_beta0, 
-  "_beta1=", mu_beta1, 
-  ".rds"))
-
-

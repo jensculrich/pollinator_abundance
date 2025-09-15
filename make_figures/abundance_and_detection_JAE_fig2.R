@@ -140,14 +140,14 @@ temp <- df_estimates_eco[1:3,]
    scale_x_discrete(name="", breaks = seq(1:3),
                     labels=c("multimix",
                              "binmix",
-                             "GLM"
+                             "GLMM"
                     )) +
    scale_y_continuous(str_wrap("Posterior model estimate (log-scaled)", width = 30),
                       limits = c(-2, 5)) +
    guides(color = guide_legend(title = "")) +
    geom_hline(yintercept = 0, lty = "dashed") +
-    ggtitle(bquote(alpha[0])) +
-    theme(plot.title = element_text(size = 32, face = "bold"),
+    ggtitle(mu[alpha[1]] ~ "- abundance intercept") +
+    theme(plot.title = element_text(size = 20, face = "bold"),
           legend.text=element_text(size=10),
           axis.text.x = element_text(size = 18),
           axis.text.y = element_text(size = 20, angle=45, vjust=-0.5),
@@ -176,14 +176,14 @@ temp <- df_estimates_eco[4:6,]
     scale_x_discrete(name="", breaks = (seq(1:3)+3),
                      labels=c("multimix",
                               "binmix",
-                              "GLM"
+                              "GLMM"
                      )) +
     scale_y_continuous(str_wrap("Posterior model estimate (log-scaled)", width = 30),
                        limits = c(-1, 3)) +
     guides(color = guide_legend(title = "")) +
     geom_hline(yintercept = 0, lty = "dashed") +
-    ggtitle(bquote(mu[alpha[4]])) +
-    theme(plot.title = element_text(size = 32, face = "bold"),
+    ggtitle(mu[alpha[4]] ~ "- effect of restoration on abundance") +
+    theme(plot.title = element_text(size = 20, face = "bold"),
           legend.text=element_text(size=10),
           axis.text.x = element_text(size = 18),
           axis.text.y = element_text(size = 20, angle=45, vjust=-0.5),
@@ -217,8 +217,8 @@ temp <- df_estimates_eco[7:8,]
                        limits = c(-4, 1)) +
     guides(color = guide_legend(title = "")) +
     geom_hline(yintercept = 0, lty = "dashed") +
-    ggtitle(bquote(beta[0])) +
-    theme(plot.title = element_text(size = 32, face = "bold"),
+    ggtitle(mu[beta[1]] ~ "- detection intercept") +
+    theme(plot.title = element_text(size = 20, face = "bold"),
           legend.text=element_text(size=10),
           axis.text.x = element_text(size = 18),
           axis.text.y = element_text(size = 20, angle=45, vjust=-0.5),
@@ -252,8 +252,8 @@ temp <- df_estimates_eco[9:10,]
                        limits = c(-1, 2)) +
     guides(color = guide_legend(title = "")) +
     geom_hline(yintercept = 0, lty = "dashed") +
-    ggtitle(bquote(mu[beta[4]])) +
-    theme(plot.title = element_text(size = 32, face = "bold"),
+    ggtitle(mu[beta[4]] ~ "- effect of restoration on detection") +
+    theme(plot.title = element_text(size = 20, face = "bold"),
           legend.text=element_text(size=10),
           axis.text.x = element_text(size = 18),
           axis.text.y = element_text(size = 20, angle=45, vjust=-0.5),

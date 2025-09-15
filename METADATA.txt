@@ -1,0 +1,39 @@
+## Metadata for "Estimating the ecological drivers of insect abundance when detection is imperfect"
+
+##--------------------------------------------------------------------------
+## DATA COLLECTION OVERVIEW
+
+We collected mark-recapture data for 8 species of wild bees from 10 field sites in summer 2022 and 2023. See the readme file "README.txt" for more info about how we analyzed the data. 
+
+We collected mark-recapture data for wild bees, using a POSCA paint pen to apply marks (data specific but not individual bee specific marks). This allowed us to determine whether we previously encountered bees on our second and third repeat surveys to a site. We analyzed these data with multinomial N-mixture model.
+
+Alternatively, we ignored whether bees were marked and simply recorded the total number of marked / unmarked bees that were detected (a simple count). We analyzed these data with binomial N-mixture model or with a GLMM.
+
+The data were collected in 45 minute survey rounds of active survey time, using a sweep net and pausing the timer for handling bees caught in the net. All data were collected by J. Ulrich, with a second rotating observer following and helping to spot bees. The sites were an area of 100m x 100m, all in urban parks in Vancouver, Canada. Half of the sites were conventionally managed. For the other half of the sites, mowing was reduced and wildflower seeds were added. In https://doi.org/10.1111/ele.70037 we showed that this increased flowering species richness, and also increased vegetation height. All sites were surveyed 3 times per season, in summer 2022 and again in summer 2023. 
+
+##--------------------------------------------------------------------------
+## DATA COLUMNS - "abundance_data.csv"
+
+site - character indicating the park site name. There are 10 parks in total.
+
+treatment - binary value indicates whether a park site was control (0) or restored (1).
+
+species - character indicating the species name. We collected data for 10 species. Megachile sp. include all species of the Megachile genus EXCEPT for the non-native species Megachile rotundata.
+
+obs_round - integer value between 1, 2 or 3. Indicates whether it was the first survey within a season (1), second survey (2) or third survey (3). 
+
+surveyed - binary value indicates whether we conducted the survey (1) or not (0). We didn't survey Andrena prunorum in year 2022 and so these received a value of 0, all other rows received a value of 1.
+
+date - the date of the survey in month.day.year format.
+
+year - integer value representing the year of the survey, 1 = 2022; 2 = 2023.
+
+count - the number of individuals observed on the site/species/year/survey occassion regardless of whether or not they were marked.
+
+obs_round_1_recaptures - the number of individuals recaptured that were marked on the first survey. This will be NA for any row with a obs_round==1 - we cannot recapture individuals observed on the first round on the first survey.
+
+obs_round_2_recaptures - the number of individuals recaptured that were marked on the second survey. This will be NA for any row with a obs_round==1 or obs_round==2 - we cannot recapture individuals observed on the second round on the first or second surveys.
+
+obs_round_1_and_2_double_recaptures - the number of individuals recaptured that were marked on both the first and the second survey. This will be NA for any row with a obs_round==1 or obs_round==2 - we cannot recapture individuals observed on the first and second round on the first or second surveys.
+
+notes - notes if any about any peculiarities in conditions observed on the date of data collection.

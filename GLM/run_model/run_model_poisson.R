@@ -1,14 +1,11 @@
 # fit the GLM model to my real data
-# load required libraries
 library(tidyverse)
-library(rstan)
 
 # one way to do this for repeat counts would be to take the max count per site*species*year
 # another way could be to use site random effects and treat the data as repeat draws
 
-# run model with one value per site/species/year - max observed count? TRUE
-# or treat as repeated counts from each site/species/year? FALSE
-# FALSE is how I presented in the paper
+# run model with max counts? TRUE
+# or treat as repeated counts? FALSE
 use_max_counts = FALSE
 
 ################################################################################
@@ -18,20 +15,11 @@ use_max_counts = FALSE
 # analysis of real data ############
 ####################################
 
-# read the data
 df <- read.csv("./data/abundance_data.csv")
 str(df)
 
-# need to track that we didn't survey A. prunorum in first year of study
-df1 <- df %>%
-  filter(year == 1) %>% # add a missing data variable
-  mutate(missing_data = ifelse(species == "Andrena prunorum", 0, 1))
-
-df2 <- df %>%
-  filter(year == 2) %>% # add a missing data variable
-  mutate(missing_data = 1)
-
-df <- rbind(df1, df2)
+# for now we will filter out the species that we only looked at in one year (A. prunorum)
+df <- filter(df, species != "Andrena prunorum")
 
 ## Clean and prep data for model fitting
 # select needed columns
@@ -46,24 +34,22 @@ df <- df %>%
   group_by(site, species, year) %>%
   mutate(visit = row_number())
 
-# longto wide data format
+# long  to wide
 df <- pivot_wider(df, names_from = visit, values_from = count)
 
-species_names <- as.vector(df$species) # vector of species names (character)
-site_names <- as.vector(df$site) # vector of sites names (character)
+species_names <- as.vector(df$species) # vector of species
+site_names <- as.vector(df$site) # vector of sites
 
-y <- as.matrix(df[,6:8]) # y is a matrix of observed count sizes
-n_visits <- ncol(y) # number of times each site was visited
-R <- nrow(y) # total number of site/species/year combinations
-X <- as.vector(df$treatment)  # 0 = control site; 1 = restored site
-species <- as.integer(as.factor(species_names)) # vector of species names (unique integer values for stan)
-sites <- as.integer(as.factor(site_names)) # vector of sites names (unique integer values for stan)
-year <- as.vector(df$year) # year 0 = 2022; 1 = 2023
-missing_data <- as.vector(df$missing_data)  # vector indicating whether the row should be treated as NA 
+y <- as.matrix(df[,5:7]) # count columns
+n_visits <- ncol(y)
+R <- nrow(y)
+X <- as.vector(df$treatment)
+species <- as.integer(as.factor(species_names))
+sites <- as.integer(as.factor(site_names))
+year <- as.vector(df$year)
 
-# keep track of integer - character converted site and species names
 names <- rbind("Agapostemon texanus",
-               "Andrena prunorum",
+               #"Andrena prunorum",
                "Anthidium oblongatum",
                "Bombus flavifrons", 
                "Bombus mixtus", 
@@ -74,7 +60,6 @@ names <- rbind("Agapostemon texanus",
 species_names_table <- as.data.frame(cbind(cbind(1:length(names)), names))
 
 if(use_max_counts == TRUE){
-  # if using max counts only, calculate max count per site/species/year
   y_matrix <- y
   y <- apply(y, 1, max)
   
@@ -82,11 +67,11 @@ if(use_max_counts == TRUE){
 }
 
 
+
 ##########################
 ### Run model ############
 ##########################
 
-# bundle some data for Stan
 stan_data <- c("R", 
                "sites",
                "n_sites",
@@ -94,8 +79,7 @@ stan_data <- c("R",
                "n_species", 
                "year",
                "n_visits",
-               "y", "X",
-               "missing_data")
+               "y", "X")
 
 # Parameters monitored
 params <- c(
@@ -105,7 +89,7 @@ params <- c(
   "sigma_alpha1_species",
   "alpha2",
   "sigma_alpha3_site",
-  "scale_param",
+  #"scale_param",
   "alpha0_species",
   "alpha1_species",
   "alpha3_site",
@@ -121,6 +105,7 @@ n_thin <- 1
 n_burnin <- n_iterations / 2
 n_chains <- 4
 n_cores <- 4
+delta = 0.97
 
 ## Initial values
 # given the number of parameters, the chains need some decent initial values
@@ -137,9 +122,10 @@ inits <- lapply(1:n_chains, function(i)
 )
 
 # Call STAN model from R 
-stan_model <- "./GLM/models/glm_negbin_NAs.stan"
+stan_model <- "./GLM/models/glm_poisson.stan"
 
 ## Call Stan from R
+library(rstan)
 stan_out <- stan(stan_model,
                      data = stan_data, 
                      init = inits, 
@@ -147,11 +133,11 @@ stan_out <- stan(stan_model,
                      chains = n_chains, iter = n_iterations, 
                      warmup = n_burnin, thin = n_thin,
                      seed = 1,
+                     control=list(adapt_delta=delta),
                      open_progress = FALSE,
                      cores = n_cores)
 
-# save and view some model outputs
-saveRDS(stan_out, "./model_outputs/real_data/GLM.rds")
+saveRDS(stan_out, "./model_outputs/real_data/GLM_poisson.rds")
 print(stan_out, digits = 3)
 
 stan_out <- readRDS("./model_outputs/real_data/GLM.rds")
@@ -161,34 +147,15 @@ traceplot(stan_out, pars = c("mu_alpha0",
                              "mu_alpha1",
                              "sigma_alpha1_species",
                              "alpha2",
-                             "sigma_alpha3_site",
-                             "scale_param"))
+                             "sigma_alpha3_site"))
 
 pairs(stan_out, pars = c("mu_alpha0",
                          "sigma_alpha0_species",
                          "mu_alpha1",
                          "sigma_alpha1_species",
                          "alpha2",
-                         "sigma_alpha3_site",
-                         "scale_param"))
+                         "sigma_alpha3_site"))
 
-# Evaluation of fit
-list_of_draws <- as.data.frame(stan_out)
-
-par(mfrow = c(1, 1))
-
-plot(list_of_draws$fit, list_of_draws$fit_new, main = "", xlab =
-       "Discrepancy actual data", ylab = "Discrepancy replicate data",
-     frame.plot = FALSE,
-     ylim = c(000, 150000),
-     xlim = c(000, 150000))
-abline(0, 1, lwd = 2, col = "black")
-
-Bp <- signif(mean(list_of_draws$fit_new > list_of_draws$fit), 4)
-title(paste0("Freeman Tukey P = ", Bp)) 
-
-mean(list_of_draws$fit_new > list_of_draws$fit)
-mean(list_of_draws$fit) / mean(list_of_draws$fit_new)
 
 library(bayesplot)
 library(tidyverse)
@@ -233,4 +200,20 @@ q <- q + labs(x = "totalN[2]",
   geom_vline(xintercept = my_simulated_data$totalN[2], linetype = "solid", size = 1)
 q
 
+# Evaluation of fit
+list_of_draws <- as.data.frame(stan_out)
 
+par(mfrow = c(1, 1))
+
+plot(list_of_draws$fit, list_of_draws$fit_new, main = "", xlab =
+       "Discrepancy actual data", ylab = "Discrepancy replicate data",
+     frame.plot = FALSE,
+     ylim = c(000, 7000),
+     xlim = c(000, 7000))
+abline(0, 1, lwd = 2, col = "black")
+
+Bp <- signif(mean(list_of_draws$fit_new > list_of_draws$fit), 4)
+title(paste0("Freeman Tukey P = ", Bp)) 
+
+mean(list_of_draws$fit_new > list_of_draws$fit)
+mean(list_of_draws$fit) / mean(list_of_draws$fit_new)
